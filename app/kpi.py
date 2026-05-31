@@ -76,7 +76,9 @@ def render_kpi_card(col, label: str, value: str) -> None:
         _emit_html(_kpi_html(label, value))
 
 
-def render_kpi_block(label: str, value: str, *, spaced: bool = False, container=None) -> None:
+def render_kpi_block(
+    label: str, value: str, *, spaced: bool = False, container=None
+) -> None:
     """Tarjeta KPI a ancho completo (inicio, sidebar)."""
     _emit_html(_kpi_html(label, value, spaced=spaced), container=container)
 

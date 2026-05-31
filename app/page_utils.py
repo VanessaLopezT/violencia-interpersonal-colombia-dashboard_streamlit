@@ -37,7 +37,9 @@ def setup_page(etapa_key: str) -> dict[str, Any] | None:
     render_section_nav(etapa_key)
     render_apertura(etapa_key, data)
     if data["casos"] == 0:
-        st.warning("No hay casos con la selección actual. Amplíe el periodo o el departamento.")
+        st.warning(
+            "No hay casos con la selección actual. Amplíe el periodo o el departamento."
+        )
         st.stop()
     return data
 
@@ -74,7 +76,10 @@ def cached_figure(
         "linea_anual": charts.linea_anual,
         "linea_anual_pct": charts.linea_anual_pct,
         "dept_top10": lambda d: charts.barras_horizontales(
-            d, "departamento_hecho", title="Departamentos con más casos registrados", pct_col="pct"
+            d,
+            "departamento_hecho",
+            title="Departamentos con más casos registrados",
+            pct_col="pct",
         ),
         "zona": charts.barras_zona_pct,
         "edad_sexo": charts.barras_apiladas_pct,
@@ -137,7 +142,9 @@ def show_cached_chart(
 
 # Registrar ciclo por separado (firma distinta)
 @st.cache_data(show_spinner=False)
-def cached_ciclo_figure(cache_key: tuple, payload: str, sexo: str, _figures_v: int = 4) -> str:
+def cached_ciclo_figure(
+    cache_key: tuple, payload: str, sexo: str, _figures_v: int = 4
+) -> str:
     from app.charts import barras_ciclo
 
     df = pd.read_json(StringIO(payload), orient="split")
@@ -159,3 +166,10 @@ def cached_muni_figure(
     chart_title = title or f"Top 5 municipios en {departamento}"
     return barras_municipios(df, title=chart_title, label_col=label_col).to_json()
 
+
+@st.cache_data(show_spinner="Cargando mapa de Colombia...")
+def load_colombia_geojson() -> dict:
+    import requests
+
+    url = "https://gist.githubusercontent.com/john-guerra/43c7656821069d00dcbc/raw/3aadedf47badbdac823b00dbe259f6bc6d9e1899/colombia.geo.json"
+    return requests.get(url, timeout=10).json()

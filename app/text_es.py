@@ -163,6 +163,11 @@ CHART_AYUDA: dict[str, str] = {
     "agresores": (
         "Tipo de presunto agresor más frecuente en los registros de valoración."
     ),
+    "mapa_temporal": (
+        "Mapa interactivo de calor que muestra la cantidad de casos de violencia "
+        "registrados en cada departamento de Colombia. Presione el botón de reproducción (▶) "
+        "en la esquina inferior izquierda para ver la evolución a lo largo del tiempo."
+    ),
 }
 
 
@@ -199,7 +204,9 @@ def canonize_column(series: pd.Series) -> pd.Series:
         key = str(val).casefold()
         if key not in canon or freq.get(val, 0) > freq.get(canon[key], 0):
             canon[key] = val
-    return normalized.map(lambda v: canon.get(str(v).casefold(), v) if pd.notna(v) else v)
+    return normalized.map(
+        lambda v: canon.get(str(v).casefold(), v) if pd.notna(v) else v
+    )
 
 
 def apply_to_dataframe(df: pd.DataFrame) -> pd.DataFrame:

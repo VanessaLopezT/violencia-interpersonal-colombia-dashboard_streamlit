@@ -58,14 +58,28 @@ COLUMN_RENAME_MAP = {
 }
 
 MISSING_PATTERNS = [
-    "sin informacion", "sin información", "no reportado", "no aplica",
-    "desconocido", "no definido", "no especificado", "ignorado", "999",
+    "sin informacion",
+    "sin información",
+    "no reportado",
+    "no aplica",
+    "desconocido",
+    "no definido",
+    "no especificado",
+    "ignorado",
+    "999",
 ]
 
 INCAPACIDAD_MAP = {
-    "0": 0, "1 a 5": 3, "6 a 15": 10, "16 a 30": 23, "31 a 60": 45,
-    "61 a 90": 75, "91 a 120": 105, "121 a 150": 135,
-    "151 o mas": 180, "151 o más": 180,
+    "0": 0,
+    "1 a 5": 3,
+    "6 a 15": 10,
+    "16 a 30": 23,
+    "31 a 60": 45,
+    "61 a 90": 75,
+    "91 a 120": 105,
+    "121 a 150": 135,
+    "151 o mas": 180,
+    "151 o más": 180,
 }
 
 
@@ -104,9 +118,7 @@ def _read_csv(path: Path) -> pd.DataFrame:
             return pd.read_csv(path, encoding=encoding, low_memory=False)
         except UnicodeDecodeError as exc:
             last_error = exc
-    raise UnicodeDecodeError(
-        "csv", b"", 0, 0, f"No se pudo leer {path}: {last_error}"
-    )
+    raise UnicodeDecodeError("csv", b"", 0, 0, f"No se pudo leer {path}: {last_error}")
 
 
 ORDERED_COLUMNS = list(COLUMN_RENAME_MAP.values())
@@ -124,7 +136,12 @@ def _rename_columns(df: pd.DataFrame) -> pd.DataFrame:
 
 def prepare() -> pd.DataFrame:
     """Carga el CSV, limpia, crea variables derivadas y devuelve el dataframe listo."""
-    from app.text_es import apply_to_dataframe, canonize_column, normalizar_franja, normalize_text
+    from app.text_es import (
+        apply_to_dataframe,
+        canonize_column,
+        normalizar_franja,
+        normalize_text,
+    )
 
     df = _read_csv(_find_csv())
     df = _rename_columns(df)
@@ -143,15 +160,21 @@ def prepare() -> pd.DataFrame:
         )
 
     for col in [
-        "departamento_hecho", "municipio_hecho", "escenario_hecho",
-        "presunto_agresor", "mecanismo_causal", "zona_hecho",
+        "departamento_hecho",
+        "municipio_hecho",
+        "escenario_hecho",
+        "presunto_agresor",
+        "mecanismo_causal",
+        "zona_hecho",
     ]:
         if col in df.columns:
             df[col] = canonize_column(df[col])
 
     df["anio_hecho"] = pd.to_numeric(df["anio_hecho"], errors="coerce").astype("Int64")
     df["dias_incapacidad_num"] = df["dias_incapacidad"].map(_parse_incapacidad)
-    df = df[(df["anio_hecho"] >= YEAR_MIN) & (df["anio_hecho"] <= YEAR_MAX)].reset_index(drop=True)
+    df = df[
+        (df["anio_hecho"] >= YEAR_MIN) & (df["anio_hecho"] <= YEAR_MAX)
+    ].reset_index(drop=True)
 
     df["anio_mes"] = df["anio_hecho"].astype(str) + "-" + df["mes_hecho"].astype(str)
     df["fin_semana"] = df["dia_hecho"].isin(

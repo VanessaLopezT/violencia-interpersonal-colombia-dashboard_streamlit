@@ -43,7 +43,9 @@ REQUIRED_FILTER_COLS = [
 
 
 def _require_aggs() -> None:
-    missing = [name for name, fname in AGG_FILES.items() if not (PROCESSED / fname).exists()]
+    missing = [
+        name for name, fname in AGG_FILES.items() if not (PROCESSED / fname).exists()
+    ]
     if missing:
         raise FileNotFoundError(
             f"Faltan agregados: {missing}. Ejecute: python analysis/run.py"

@@ -2,7 +2,7 @@
 """Paleta visual academica compartida por Plotly y Streamlit."""
 
 # Serie principal
-COLOR_PRIMARY = "#1E3A5F"      # azul marino
+COLOR_PRIMARY = "#1E3A5F"  # azul marino
 
 # Categorias semanticas
 COLOR_ZONA = {

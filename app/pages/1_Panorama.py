@@ -30,13 +30,17 @@ vista = lazy_tab(["Tendencia anual", "Lectura del periodo"], key="tab_panorama")
 
 if vista == "Tendencia anual":
     fig_json = cached_figure("linea_anual", ck, _df_payload(data["anual"]))
-    show_cached_chart(fig_json, "chart_panorama_linea", ayuda=chart_ayuda("linea_anual"))
+    show_cached_chart(
+        fig_json, "chart_panorama_linea", ayuda=chart_ayuda("linea_anual")
+    )
 
 if vista == "Lectura del periodo":
     for linea in lectura_periodo(data["anual"]):
         st.markdown(linea)
     if len(data["anual"]) >= 2:
         fig_json = cached_figure("linea_anual_pct", ck, _df_payload(data["anual"]))
-        show_cached_chart(fig_json, "chart_panorama_pct", ayuda=chart_ayuda("linea_anual_pct"))
+        show_cached_chart(
+            fig_json, "chart_panorama_pct", ayuda=chart_ayuda("linea_anual_pct")
+        )
 
 render_cierre_etapa("panorama")

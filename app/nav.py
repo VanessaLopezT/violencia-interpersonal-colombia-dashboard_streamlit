@@ -152,7 +152,13 @@ def render_section_nav(current: str) -> None:
             label = _section_label(section)
             key = f"nav_{current}_{section['id']}"
             if section["id"] == current:
-                st.button(label, use_container_width=True, type="secondary", key=key, disabled=True)
+                st.button(
+                    label,
+                    use_container_width=True,
+                    type="secondary",
+                    key=key,
+                    disabled=True,
+                )
             elif st.button(label, use_container_width=True, type="primary", key=key):
                 st.switch_page(section["path"])
 

@@ -105,14 +105,27 @@ _HALLAZGO_BUILDERS = {
 def _kpi_panorama(data: dict[str, Any]) -> list[tuple[str, str]]:
     anual = data["anual"]
     if anual.empty:
-        return [("Casos en la selección", "0"), ("Año de mayor registro", "N/D"), ("Año de menor registro", "N/D"), ("Variación entre extremos", "N/D")]
+        return [
+            ("Casos en la selección", "0"),
+            ("Año de mayor registro", "N/D"),
+            ("Año de menor registro", "N/D"),
+            ("Variación entre extremos", "N/D"),
+        ]
     imax = anual.loc[anual["casos"].idxmax()]
     imin = anual.loc[anual["casos"].idxmin()]
-    var = ((imax["casos"] - imin["casos"]) / imin["casos"] * 100) if imin["casos"] else 0
+    var = (
+        ((imax["casos"] - imin["casos"]) / imin["casos"] * 100) if imin["casos"] else 0
+    )
     return [
         ("Casos en la selección", _fmt_int(data["casos"])),
-        ("Año de mayor registro", f"{int(imax['anio_hecho'])} ({_fmt_int(imax['casos'])})"),
-        ("Año de menor registro", f"{int(imin['anio_hecho'])} ({_fmt_int(imin['casos'])})"),
+        (
+            "Año de mayor registro",
+            f"{int(imax['anio_hecho'])} ({_fmt_int(imax['casos'])})",
+        ),
+        (
+            "Año de menor registro",
+            f"{int(imin['anio_hecho'])} ({_fmt_int(imin['casos'])})",
+        ),
         ("Variación entre extremos", _fmt_pct(var)),
     ]
 
@@ -121,8 +134,15 @@ def _kpi_territorio(data: dict[str, Any]) -> list[tuple[str, str]]:
     dept = data["dept"]
     zona = data["zona"]
     muni = data.get("muni_top")
-    top3 = dept.head(3)["pct"].sum() if len(dept) >= 3 else (dept["pct"].sum() if len(dept) else 0)
-    urbana = zona.loc[zona["zona_hecho"].astype(str).str.contains("Cabecera", case=False, na=False), "pct"].sum()
+    top3 = (
+        dept.head(3)["pct"].sum()
+        if len(dept) >= 3
+        else (dept["pct"].sum() if len(dept) else 0)
+    )
+    urbana = zona.loc[
+        zona["zona_hecho"].astype(str).str.contains("Cabecera", case=False, na=False),
+        "pct",
+    ].sum()
     muni_label = "N/D"
     if muni is not None and len(muni):
         muni_label = (
@@ -168,11 +188,21 @@ def _kpi_patrones(data: dict[str, Any]) -> list[tuple[str, str]]:
     sev_top = sev.iloc[0] if len(sev) else None
     agr_top = agr.iloc[0] if len(agr) else None
     return [
-        ("Mecanismo principal", str(mec_top["categoria"]) if mec_top is not None else "N/D"),
-        ("Escenario principal", str(esc_top["categoria"]) if esc_top is not None else "N/D"),
+        (
+            "Mecanismo principal",
+            str(mec_top["categoria"]) if mec_top is not None else "N/D",
+        ),
+        (
+            "Escenario principal",
+            str(esc_top["categoria"]) if esc_top is not None else "N/D",
+        ),
         (
             "Gravedad modal",
-            f"{sev_top['categoria']}\n{_fmt_pct(sev_top['pct'])}" if sev_top is not None else "N/D",
+            (
+                f"{sev_top['categoria']}\n{_fmt_pct(sev_top['pct'])}"
+                if sev_top is not None
+                else "N/D"
+            ),
         ),
         (
             "Agresor más frecuente",

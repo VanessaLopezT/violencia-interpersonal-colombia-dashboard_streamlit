@@ -56,7 +56,9 @@ st.subheader(UI["inicio_resumen_titulo"])
 st.caption(UI["inicio_resumen_caption"])
 
 if data["casos"] == 0:
-    st.warning("No hay casos con la selección actual. Amplíe el periodo o relaje los filtros del panel lateral.")
+    st.warning(
+        "No hay casos con la selección actual. Amplíe el periodo o relaje los filtros del panel lateral."
+    )
 else:
     resumen = resumen_perfil_seleccion(data)
     col_tabla, col_graf = st.columns([1.05, 0.95], gap="large")
@@ -66,7 +68,9 @@ else:
             resumen,
             column_config={
                 "dimension": st.column_config.TextColumn("Dimensión", width="medium"),
-                "detalle": st.column_config.TextColumn("Valor destacado", width="large"),
+                "detalle": st.column_config.TextColumn(
+                    "Valor destacado", width="large"
+                ),
                 "casos": st.column_config.NumberColumn("Casos", format="%d"),
                 "pct_seleccion": st.column_config.NumberColumn(
                     "% selección",

@@ -76,19 +76,31 @@ def compute_slices(aggs: Aggregates, f: FilterState) -> dict[str, Any]:
         casos,
     )
 
-    anual = filt.groupby("anio_hecho", as_index=False)["casos"].sum().sort_values("anio_hecho")
+    anual = (
+        filt.groupby("anio_hecho", as_index=False)["casos"]
+        .sum()
+        .sort_values("anio_hecho")
+    )
     anual = anual.copy()
-    anual["pct_total"] = anual["casos"] / aggs.total_nacional * 100 if aggs.total_nacional else 0
+    anual["pct_total"] = (
+        anual["casos"] / aggs.total_nacional * 100 if aggs.total_nacional else 0
+    )
 
     territorial = aggs.territorial.loc[_mask(aggs.territorial, f)]
-    dept = territorial.groupby("departamento_hecho", as_index=False)["casos"].sum().sort_values(
-        "casos", ascending=False
+    dept = (
+        territorial.groupby("departamento_hecho", as_index=False)["casos"]
+        .sum()
+        .sort_values("casos", ascending=False)
     )
     dept["pct"] = dept["casos"] / casos * 100 if casos else 0
 
-    muni = territorial.groupby(
-        ["departamento_hecho", "municipio_hecho"], as_index=False
-    )["casos"].sum().sort_values("casos", ascending=False)
+    muni = (
+        territorial.groupby(["departamento_hecho", "municipio_hecho"], as_index=False)[
+            "casos"
+        ]
+        .sum()
+        .sort_values("casos", ascending=False)
+    )
 
     loc_por_depto = pd.DataFrame()
     if "localidad_hecho" in territorial.columns:
@@ -103,31 +115,46 @@ def compute_slices(aggs: Aggregates, f: FilterState) -> dict[str, Any]:
     territorial_drill = aggs.territorial.loc[
         _mask(aggs.territorial, f, ignore_municipio=True, ignore_departamento=True)
     ]
-    dept_drill = territorial_drill.groupby("departamento_hecho", as_index=False)["casos"].sum().sort_values(
-        "casos", ascending=False
+    dept_drill = (
+        territorial_drill.groupby("departamento_hecho", as_index=False)["casos"]
+        .sum()
+        .sort_values("casos", ascending=False)
     )
-    muni_drill = territorial_drill.groupby(
-        ["departamento_hecho", "municipio_hecho"], as_index=False
-    )["casos"].sum().sort_values("casos", ascending=False)
+    muni_drill = (
+        territorial_drill.groupby(
+            ["departamento_hecho", "municipio_hecho"], as_index=False
+        )["casos"]
+        .sum()
+        .sort_values("casos", ascending=False)
+    )
     loc_drill = pd.DataFrame()
     if "localidad_hecho" in territorial_drill.columns:
         loc_drill = (
-            territorial_drill.loc[territorial_drill["localidad_hecho"] != "Sin informacion"]
+            territorial_drill.loc[
+                territorial_drill["localidad_hecho"] != "Sin informacion"
+            ]
             .groupby(["departamento_hecho", "localidad_hecho"], as_index=False)["casos"]
             .sum()
             .sort_values("casos", ascending=False)
         )
+    mapa_drill = territorial_drill.groupby(
+        ["departamento_hecho", "anio_hecho"], as_index=False
+    )["casos"].sum()
 
     zona = filt.groupby("zona_hecho", as_index=False)["casos"].sum()
     zona["pct"] = zona["casos"] / casos * 100 if casos else 0
 
-    etnia = filt.groupby("pertenencia_etnica", as_index=False)["casos"].sum().sort_values(
-        "casos", ascending=False
+    etnia = (
+        filt.groupby("pertenencia_etnica", as_index=False)["casos"]
+        .sum()
+        .sort_values("casos", ascending=False)
     )
     etnia["pct"] = etnia["casos"] / casos * 100 if casos else 0
 
     demo = aggs.demografia.loc[_mask(aggs.demografia, f)]
-    edad_sexo = demo.groupby(["sexo_victima", "grupo_edad_quinquenal"], as_index=False)["casos"].sum()
+    edad_sexo = demo.groupby(["sexo_victima", "grupo_edad_quinquenal"], as_index=False)[
+        "casos"
+    ].sum()
     sexo = demo.groupby("sexo_victima", as_index=False)["casos"].sum()
     sexo["pct"] = sexo["casos"] / casos * 100 if casos else 0
     ciclo = demo.groupby(["sexo_victima", "ciclo_vital"], as_index=False)["casos"].sum()
@@ -160,6 +187,7 @@ def compute_slices(aggs: Aggregates, f: FilterState) -> dict[str, Any]:
         "loc_por_depto": loc_por_depto,
         "muni_por_depto_drill": muni_drill,
         "loc_por_depto_drill": loc_drill,
+        "mapa_drill": mapa_drill,
         "edad_sexo": edad_sexo,
         "sexo": sexo,
         "ciclo": ciclo,
@@ -174,11 +202,15 @@ def compute_slices(aggs: Aggregates, f: FilterState) -> dict[str, Any]:
     }
 
 
-def _top_categoria(df: pd.DataFrame, col: str, casos: int) -> tuple[str, int, float] | None:
+def _top_categoria(
+    df: pd.DataFrame, col: str, casos: int
+) -> tuple[str, int, float] | None:
     if df.empty or casos <= 0 or col not in df.columns:
         return None
     row = df.sort_values("casos", ascending=False).iloc[0]
-    pct = float(row["pct"]) if "pct" in df.columns else float(row["casos"]) / casos * 100
+    pct = (
+        float(row["pct"]) if "pct" in df.columns else float(row["casos"]) / casos * 100
+    )
     return str(row[col]), int(row["casos"]), pct
 
 
@@ -219,14 +251,22 @@ def resumen_perfil_seleccion(data: dict[str, Any]) -> pd.DataFrame:
         append("Zona del hecho", top[0], top[1], top[2])
 
     if f.pertenencia_etnica != UI["todos_etnia"]:
-        append("Pertenencia étnica", f"Filtro activo: {f.pertenencia_etnica}", casos, 100.0)
-    elif top := _top_categoria(data.get("etnia", pd.DataFrame()), "pertenencia_etnica", casos):
+        append(
+            "Pertenencia étnica", f"Filtro activo: {f.pertenencia_etnica}", casos, 100.0
+        )
+    elif top := _top_categoria(
+        data.get("etnia", pd.DataFrame()), "pertenencia_etnica", casos
+    ):
         append("Pertenencia étnica", top[0], top[1], top[2])
 
     if f.ciclo_vital != UI["todos_ciclo"]:
         append("Ciclo vital", f"Filtro activo: {f.ciclo_vital}", casos, 100.0)
     else:
-        ciclo_agg = data.get("ciclo", pd.DataFrame()).groupby("ciclo_vital", as_index=False)["casos"].sum()
+        ciclo_agg = (
+            data.get("ciclo", pd.DataFrame())
+            .groupby("ciclo_vital", as_index=False)["casos"]
+            .sum()
+        )
         ciclo_agg["pct"] = ciclo_agg["casos"] / casos * 100 if casos else 0
         if top := _top_categoria(ciclo_agg, "ciclo_vital", casos):
             append("Ciclo vital", top[0], top[1], top[2])

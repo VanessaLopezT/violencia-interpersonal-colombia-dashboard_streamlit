@@ -36,7 +36,9 @@ def _perfil_ciclo(data: dict, cache_key: tuple) -> None:
         if sexo_resaltar == "Ambos"
         else chart_ayuda("ciclo_sexo", sexo=sexo_resaltar.lower())
     )
-    ciclo_json = cached_ciclo_figure(cache_key, _df_payload(data["ciclo"]), sexo_resaltar)
+    ciclo_json = cached_ciclo_figure(
+        cache_key, _df_payload(data["ciclo"]), sexo_resaltar
+    )
     show_cached_chart(ciclo_json, f"chart_ciclo_{sexo_resaltar}", ayuda=ayuda_ciclo)
 
 

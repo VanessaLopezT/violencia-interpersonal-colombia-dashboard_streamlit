@@ -20,8 +20,14 @@ from src.prepare import save_dataset, prepare
 
 PROCESSED = PROJECT_ROOT / "data" / "processed"
 CLUSTER_COLS = [
-    "sexo_victima", "grupo_edad_quinquenal", "ciclo_vital", "zona_hecho",
-    "escenario_hecho", "mecanismo_causal", "presunto_agresor", "departamento_hecho",
+    "sexo_victima",
+    "grupo_edad_quinquenal",
+    "ciclo_vital",
+    "zona_hecho",
+    "escenario_hecho",
+    "mecanismo_causal",
+    "presunto_agresor",
+    "departamento_hecho",
 ]
 FILTER_DIMS = [
     "anio_hecho",
@@ -65,10 +71,26 @@ def export_dashboard_aggregates(df: pd.DataFrame) -> None:
         PROCESSED / "agg_demografia.parquet", index=False
     )
 
-    esc = df.groupby(["escenario_hecho", *FILTER_DIMS], observed=True).size().reset_index(name="casos")
-    mec = df.groupby(["mecanismo_causal", *FILTER_DIMS], observed=True).size().reset_index(name="casos")
-    sev = df.groupby(["severidad_categoria", *FILTER_DIMS], observed=True).size().reset_index(name="casos")
-    agr = df.groupby(["presunto_agresor", *FILTER_DIMS], observed=True).size().reset_index(name="casos")
+    esc = (
+        df.groupby(["escenario_hecho", *FILTER_DIMS], observed=True)
+        .size()
+        .reset_index(name="casos")
+    )
+    mec = (
+        df.groupby(["mecanismo_causal", *FILTER_DIMS], observed=True)
+        .size()
+        .reset_index(name="casos")
+    )
+    sev = (
+        df.groupby(["severidad_categoria", *FILTER_DIMS], observed=True)
+        .size()
+        .reset_index(name="casos")
+    )
+    agr = (
+        df.groupby(["presunto_agresor", *FILTER_DIMS], observed=True)
+        .size()
+        .reset_index(name="casos")
+    )
     esc["tipo"] = "escenario"
     esc = esc.rename(columns={"escenario_hecho": "categoria"})
     mec["tipo"] = "mecanismo"
@@ -81,9 +103,11 @@ def export_dashboard_aggregates(df: pd.DataFrame) -> None:
         PROCESSED / "agg_patrones.parquet", index=False
     )
 
-    df.groupby(["dia_hecho", "rango_hora", *FILTER_DIMS], observed=True).size().reset_index(
-        name="casos"
-    ).to_parquet(PROCESSED / "agg_dia_hora.parquet", index=False)
+    df.groupby(
+        ["dia_hecho", "rango_hora", *FILTER_DIMS], observed=True
+    ).size().reset_index(name="casos").to_parquet(
+        PROCESSED / "agg_dia_hora.parquet", index=False
+    )
 
     df.groupby(FILTER_DIMS, observed=True).size().reset_index(name="casos").to_parquet(
         PROCESSED / "agg_filtros.parquet", index=False
@@ -94,10 +118,14 @@ def export_dashboard_aggregates(df: pd.DataFrame) -> None:
 
 def _clustering(df: pd.DataFrame, k: int = 4, n: int = 50000) -> None:
     """Segmentacion opcional para el informe; no alimenta el dashboard."""
-    sample = df[CLUSTER_COLS].sample(min(n, len(df)), random_state=42).fillna("Sin informacion")
-    matrix = np.column_stack([
-        LabelEncoder().fit_transform(sample[c].astype(str)) for c in CLUSTER_COLS
-    ])
+    sample = (
+        df[CLUSTER_COLS]
+        .sample(min(n, len(df)), random_state=42)
+        .fillna("Sin informacion")
+    )
+    matrix = np.column_stack(
+        [LabelEncoder().fit_transform(sample[c].astype(str)) for c in CLUSTER_COLS]
+    )
     KMeans(n_clusters=k, random_state=42, n_init=10).fit_predict(matrix)
     summary = {
         "k": k,
@@ -122,35 +150,51 @@ def _export_figuras_articulo(df: pd.DataFrame) -> None:
     plt.rcParams["font.family"] = "DejaVu Sans"
     FIGURAS_ARTICULO.mkdir(parents=True, exist_ok=True)
 
-    annual = df.groupby("anio_hecho", as_index=False).size().rename(columns={"size": "casos"})
+    annual = (
+        df.groupby("anio_hecho", as_index=False)
+        .size()
+        .rename(columns={"size": "casos"})
+    )
     annual["anio_hecho"] = annual["anio_hecho"].astype(int)
     fig, ax = plt.subplots(figsize=(10, 5))
-    ax.plot(annual["anio_hecho"], annual["casos"], marker="o", color="#1E3A5F", linewidth=2)
+    ax.plot(
+        annual["anio_hecho"], annual["casos"], marker="o", color="#1E3A5F", linewidth=2
+    )
     ax.set_title("Evolución anual de casos registrados (2015–2024)")
     ax.set_xlabel("Año")
     ax.set_ylabel("Casos")
     ax.set_xticks(annual["anio_hecho"])
     ax.set_xticklabels(annual["anio_hecho"].astype(str))
     ax.grid(axis="y", alpha=0.3)
-    fig.savefig(FIGURAS_ARTICULO / "01_evolucion_anual.png", dpi=150, bbox_inches="tight")
+    fig.savefig(
+        FIGURAS_ARTICULO / "01_evolucion_anual.png", dpi=150, bbox_inches="tight"
+    )
     plt.close(fig)
 
-    dept = (
-        df.groupby("departamento_hecho").size().sort_values(ascending=True).tail(8)
-    )
+    dept = df.groupby("departamento_hecho").size().sort_values(ascending=True).tail(8)
     fig, ax = plt.subplots(figsize=(9, 5))
     dept.plot(kind="barh", ax=ax, color="#1E3A5F")
     ax.set_title("Departamentos con mayor número de registros")
     ax.set_xlabel("Casos")
     ax.set_ylabel("")
-    fig.savefig(FIGURAS_ARTICULO / "02_top_departamentos.png", dpi=150, bbox_inches="tight")
+    fig.savefig(
+        FIGURAS_ARTICULO / "02_top_departamentos.png", dpi=150, bbox_inches="tight"
+    )
     plt.close(fig)
 
     sev = df.groupby("severidad_categoria").size().sort_values(ascending=True)
-    orden = [c for c in [
-        "Sin incapacidad", "Leve (1-5 dias)", "Moderada (6-15 dias)",
-        "Alta (16-30 dias)", "Muy alta (>30 dias)", "Sin informacion",
-    ] if c in sev.index]
+    orden = [
+        c
+        for c in [
+            "Sin incapacidad",
+            "Leve (1-5 dias)",
+            "Moderada (6-15 dias)",
+            "Alta (16-30 dias)",
+            "Muy alta (>30 dias)",
+            "Sin informacion",
+        ]
+        if c in sev.index
+    ]
     sev = sev.reindex(orden if orden else sev.index)
     fig, ax = plt.subplots(figsize=(8, 4.5))
     sev.plot(kind="barh", ax=ax, color="#3D7EA6")

@@ -41,12 +41,13 @@ def _drill_municipios(data: dict, cache_key: tuple) -> None:
                 "para regenerar agregados con localidades."
             )
             return
-        loc_depto = (
-            loc.loc[loc["departamento_hecho"] == dept_sel]
-            .sort_values("casos", ascending=False)
+        loc_depto = loc.loc[loc["departamento_hecho"] == dept_sel].sort_values(
+            "casos", ascending=False
         )
         if loc_depto.empty:
-            st.info("No hay localidades registradas para Bogotá D.C. en la selección actual.")
+            st.info(
+                "No hay localidades registradas para Bogotá D.C. en la selección actual."
+            )
             return
         fig_json = cached_muni_figure(
             drill_ck,
@@ -71,7 +72,9 @@ def _drill_municipios(data: dict, cache_key: tuple) -> None:
         st.info(f"{dept_sel} no tiene desglose municipal en los datos.")
         return
     fig_json = cached_muni_figure(drill_ck, _df_payload(muni_depto), dept_sel)
-    show_cached_chart(fig_json, f"chart_muni_{dept_sel}", ayuda=chart_ayuda("municipios"))
+    show_cached_chart(
+        fig_json, f"chart_muni_{dept_sel}", ayuda=chart_ayuda("municipios")
+    )
 
 
 data = setup_page("territorio")
@@ -79,13 +82,38 @@ ck = data["cache_key"]
 render_kpis_etapa("territorio", data)
 
 vista = lazy_tab(
-    ["Ranking departamental", "Urbano y rural", "Detalle territorial"],
+    [
+        "Ranking departamental",
+        "Mapa de calor temporal",
+        "Urbano y rural",
+        "Detalle territorial",
+    ],
     key="tab_territorio",
 )
 
 if vista == "Ranking departamental":
     fig_json = cached_figure("dept_top10", ck, _df_payload(data["dept"].head(10)))
-    show_cached_chart(fig_json, "chart_territorio_dept", ayuda=chart_ayuda("dept_top10"))
+    show_cached_chart(
+        fig_json, "chart_territorio_dept", ayuda=chart_ayuda("dept_top10")
+    )
+
+if vista == "Mapa de calor temporal":
+    st.subheader("Distribución geográfica de casos en el tiempo")
+    st.caption(chart_ayuda("mapa_temporal"))
+
+    from app.page_utils import load_colombia_geojson
+    from app.charts import mapa_colombia_timeline
+
+    geojson = load_colombia_geojson()
+    f = data["filter_state"]
+
+    fig = mapa_colombia_timeline(data["mapa_drill"], geojson, f.year_min, f.year_max)
+    st.plotly_chart(
+        fig,
+        use_container_width=True,
+        key="chart_territorio_mapa",
+        config={"displayModeBar": False},
+    )
 
 if vista == "Urbano y rural":
     fig_json = cached_figure("zona", ck, _df_payload(data["zona"]))

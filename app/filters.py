@@ -127,7 +127,9 @@ def _init_filter_defaults(years: list[int]) -> None:
     _sync_widgets_from_canonical(years)
 
 
-def _ensure_selected_in_options(key: str, options: list[str], fallback: str) -> list[str]:
+def _ensure_selected_in_options(
+    key: str, options: list[str], fallback: str
+) -> list[str]:
     """Mantiene la selección actual aunque no esté en la lista dinámica (p. ej. top 50)."""
     current = st.session_state.get(key, fallback)
     if current != fallback and current not in options:
@@ -136,7 +138,9 @@ def _ensure_selected_in_options(key: str, options: list[str], fallback: str) -> 
 
 
 @st.cache_data
-def apply_filters(_aggs: Aggregates, f: FilterState, _slice_version: int = 2) -> dict[str, Any]:
+def apply_filters(
+    _aggs: Aggregates, f: FilterState, _slice_version: int = 3
+) -> dict[str, Any]:
     return compute_slices(_aggs, f)
 
 
@@ -154,7 +158,9 @@ def _reset_filters(years: list[int]) -> None:
     st.rerun()
 
 
-def _municipios_opciones(aggs: Aggregates, year_min: int, year_max: int, departamento: str) -> list[str]:
+def _municipios_opciones(
+    aggs: Aggregates, year_min: int, year_max: int, departamento: str
+) -> list[str]:
     t = aggs.territorial
     m = (t["anio_hecho"] >= year_min) & (t["anio_hecho"] <= year_max)
     if departamento != UI["todos"]:
@@ -171,7 +177,9 @@ def _municipios_opciones(aggs: Aggregates, year_min: int, year_max: int, departa
     return ranking["municipio_hecho"].astype(str).tolist()
 
 
-def _opciones_unicas(df: pd.DataFrame, col: str, orden: list[str] | None = None) -> list[str]:
+def _opciones_unicas(
+    df: pd.DataFrame, col: str, orden: list[str] | None = None
+) -> list[str]:
     presentes = sorted(df[col].dropna().astype(str).unique())
     if orden:
         ordered = [v for v in orden if v in presentes]
@@ -213,9 +221,13 @@ def render_sidebar(
         args=(years,),
     )
 
-    muni_opts = [UI["todos_municipio"]] + _municipios_opciones(aggs, year_min, year_max, dept)
+    muni_opts = [UI["todos_municipio"]] + _municipios_opciones(
+        aggs, year_min, year_max, dept
+    )
     if dept == UI["todos"]:
-        muni_opts = _ensure_selected_in_options(KEY_MUNICIPIO, muni_opts, UI["todos_municipio"])
+        muni_opts = _ensure_selected_in_options(
+            KEY_MUNICIPIO, muni_opts, UI["todos_municipio"]
+        )
     if dept == UI["todos"]:
         st.sidebar.caption(UI["municipio_hint"])
     municipio = st.sidebar.selectbox(
@@ -273,7 +285,9 @@ def render_sidebar(
     data = apply_filters(aggs, f)
     st.sidebar.divider()
     render_kpi_block(UI["casos_filtro"], f"{data['casos']:,}", container=st.sidebar)
-    render_kpi_block(UI["pct_total"], f"{data['pct_total']:.1f}%", spaced=True, container=st.sidebar)
+    render_kpi_block(
+        UI["pct_total"], f"{data['pct_total']:.1f}%", spaced=True, container=st.sidebar
+    )
 
     if etapa is not None:
         st.sidebar.divider()

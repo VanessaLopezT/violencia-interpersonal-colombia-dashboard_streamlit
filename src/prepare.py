@@ -198,9 +198,23 @@ def prepare() -> pd.DataFrame:
 
     df = apply_to_dataframe(df)
 
-    # contexto_hecho es constante en el 100 % de filas; no aporta al análisis.
-    if "contexto_hecho" in df.columns:
-        df = df.drop(columns=["contexto_hecho"])
+    # Columnas constantes, redundantes o con vacíos extremos que no aportan al análisis del dashboard
+    cols_to_drop = [
+        "contexto_hecho",             # Constante: 100% igual en el origen ('Lesiones no Fatales...')
+        "codigo_dane_municipio",      # Redundante: ya se dispone del nombre textual del municipio
+        "codigo_dane_departamento",   # Redundante: ya se dispone del nombre textual del departamento
+        "grupo_mayor_menor_edad",     # Redundante: la edad se agrupa con mayor resolución en ciclo_vital
+        "grupo_edad_judicial",        # Redundante: la edad se agrupa con mayor resolución en ciclo_vital
+        "dias_incapacidad",           # Redundante: reemplazado por la derivada severidad_categoria
+        "orientacion_sexual",         # Sparsity extrema: >95% de registros reportados como 'Sin informacion'
+        "identidad_genero",           # Sparsity extrema: >95% de registros reportados como 'Sin informacion'
+        "transgenero",                # Sparsity extrema: >95% de registros reportados como 'Sin informacion'
+        "pueblo_indigena",            # Sparsity extrema: nulo/desconocido en más del 98% del dataset general
+        "tipo_discapacidad",          # Sparsity extrema: alto nivel de subregistro administrativo de origen
+        "pertenencia_grupal",         # Sparsity extrema: alto nivel de subregistro administrativo de origen
+        "pais_nacimiento",            # Baja varianza: casi la totalidad de los registros corresponden a Colombia
+    ]
+    df = df.drop(columns=[c for c in cols_to_drop if c in df.columns], errors="ignore")
 
     return df
 

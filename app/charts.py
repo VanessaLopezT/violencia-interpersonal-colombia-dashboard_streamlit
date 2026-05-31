@@ -19,9 +19,21 @@ from app.theme import (
 from app.text_es import normalizar_franja
 
 DIAS_ORDEN = [
-    "1 Lunes", "2 Martes", "3 Miercoles", "4 Jueves", "5 Viernes",
-    "6 Sabado", "7 Domingo", "Lunes", "Martes", "Miercoles", "Jueves",
-    "Viernes", "Sabado", "Sábado", "Domingo",
+    "1 Lunes",
+    "2 Martes",
+    "3 Miercoles",
+    "4 Jueves",
+    "5 Viernes",
+    "6 Sabado",
+    "7 Domingo",
+    "Lunes",
+    "Martes",
+    "Miercoles",
+    "Jueves",
+    "Viernes",
+    "Sabado",
+    "Sábado",
+    "Domingo",
 ]
 
 CICLO_ORDEN = [
@@ -76,7 +88,9 @@ COLOR_MASCULINO = "#3D7EA6"
 
 def _prepare_anio(df: pd.DataFrame) -> pd.DataFrame:
     out = df.copy()
-    out["anio_hecho"] = pd.to_numeric(out["anio_hecho"], errors="coerce").astype("Int64")
+    out["anio_hecho"] = pd.to_numeric(out["anio_hecho"], errors="coerce").astype(
+        "Int64"
+    )
     return out.dropna(subset=["anio_hecho"])
 
 
@@ -94,21 +108,11 @@ def _eje_anio(fig: go.Figure, anios: pd.Series) -> None:
 
 
 def _hover_casos() -> dict:
-    return dict(
-        hovertemplate=(
-            "<b>%{x}</b><br>Casos: %{y:,}<br>"
-            "<extra></extra>"
-        )
-    )
+    return dict(hovertemplate=("<b>%{x}</b><br>Casos: %{y:,}<br>" "<extra></extra>"))
 
 
 def _hover_bar_h() -> dict:
-    return dict(
-        hovertemplate=(
-            "<b>%{y}</b><br>Casos: %{x:,}<br>"
-            "<extra></extra>"
-        )
-    )
+    return dict(hovertemplate=("<b>%{y}</b><br>Casos: %{x:,}<br>" "<extra></extra>"))
 
 
 def _layout(fig: go.Figure, height: int = 420, margin: dict | None = None) -> go.Figure:
@@ -164,15 +168,17 @@ def linea_anual(
     else:
         custom = pd.DataFrame({"pct_total": [0.0] * len(df)})
     fig = go.Figure()
-    fig.add_trace(go.Scatter(
-        x=df["anio_hecho"].astype(int),
-        y=df["casos"],
-        mode="lines+markers",
-        line=dict(width=3, color=COLOR_PRIMARY),
-        marker=dict(size=8, color=COLOR_PRIMARY),
-        customdata=custom,
-        hovertemplate=hover,
-    ))
+    fig.add_trace(
+        go.Scatter(
+            x=df["anio_hecho"].astype(int),
+            y=df["casos"],
+            mode="lines+markers",
+            line=dict(width=3, color=COLOR_PRIMARY),
+            marker=dict(size=8, color=COLOR_PRIMARY),
+            customdata=custom,
+            hovertemplate=hover,
+        )
+    )
     _eje_anio(fig, df["anio_hecho"])
     fig.update_layout(
         title=title,
@@ -184,12 +190,20 @@ def linea_anual(
         imax = df["casos"].idxmax()
         imin = df["casos"].idxmin()
         fig.add_annotation(
-            x=int(df.loc[imax, "anio_hecho"]), y=df.loc[imax, "casos"],
-            text="Máximo", showarrow=True, arrowhead=2, font=dict(color=COLOR_PRIMARY),
+            x=int(df.loc[imax, "anio_hecho"]),
+            y=df.loc[imax, "casos"],
+            text="Máximo",
+            showarrow=True,
+            arrowhead=2,
+            font=dict(color=COLOR_PRIMARY),
         )
         fig.add_annotation(
-            x=int(df.loc[imin, "anio_hecho"]), y=df.loc[imin, "casos"],
-            text="Mínimo", showarrow=True, arrowhead=2, font=dict(color=COLOR_PRIMARY),
+            x=int(df.loc[imin, "anio_hecho"]),
+            y=df.loc[imin, "casos"],
+            text="Mínimo",
+            showarrow=True,
+            arrowhead=2,
+            font=dict(color=COLOR_PRIMARY),
         )
     ymax = float(df["casos"].max()) if len(df) else 1.0
     _fit_outside_text(fig, ymax, axis="y", padding=0.12)
@@ -202,14 +216,16 @@ def linea_anual_pct(
 ) -> go.Figure:
     df = _prepare_anio(df)
     fig = go.Figure()
-    fig.add_trace(go.Scatter(
-        x=df["anio_hecho"].astype(int),
-        y=df["pct_total"],
-        mode="lines+markers",
-        line=dict(width=3, color=COLOR_PRIMARY),
-        marker=dict(size=8, color=COLOR_PRIMARY),
-        hovertemplate="<b>Año %{x}</b><br>Participación: %{y:.1f}%<extra></extra>",
-    ))
+    fig.add_trace(
+        go.Scatter(
+            x=df["anio_hecho"].astype(int),
+            y=df["pct_total"],
+            mode="lines+markers",
+            line=dict(width=3, color=COLOR_PRIMARY),
+            marker=dict(size=8, color=COLOR_PRIMARY),
+            hovertemplate="<b>Año %{x}</b><br>Participación: %{y:.1f}%<extra></extra>",
+        )
+    )
     _eje_anio(fig, df["anio_hecho"])
     fig.update_layout(
         title=title,
@@ -241,16 +257,18 @@ def barras_horizontales(
     )
     custom = df[pct_col] if pct_col and pct_col in df.columns else None
     fig = go.Figure()
-    fig.add_trace(go.Bar(
-        x=df[x_col],
-        y=labels,
-        orientation="h",
-        marker_color=COLOR_PRIMARY,
-        text=df[x_col].map(lambda v: f"{int(v):,}"),
-        textposition="outside",
-        customdata=custom,
-        hovertemplate=hover,
-    ))
+    fig.add_trace(
+        go.Bar(
+            x=df[x_col],
+            y=labels,
+            orientation="h",
+            marker_color=COLOR_PRIMARY,
+            text=df[x_col].map(lambda v: f"{int(v):,}"),
+            textposition="outside",
+            customdata=custom,
+            hovertemplate=hover,
+        )
+    )
     fig.update_layout(title=title, xaxis_title="Casos registrados", yaxis_title="")
     fig_height = height if height is not None else max(400, len(df) * 36)
     xmax = float(df[x_col].max()) if len(df) else 1.0
@@ -297,19 +315,23 @@ def barras_zona_pct(
     title: str = "Proporción por zona del hecho",
 ) -> go.Figure:
     df = df.sort_values("pct", ascending=True).copy()
-    colors = [COLOR_ZONA.get(str(z), PALETTE_CATEGORICAL[i % len(PALETTE_CATEGORICAL)])
-              for i, z in enumerate(df["zona_hecho"])]
+    colors = [
+        COLOR_ZONA.get(str(z), PALETTE_CATEGORICAL[i % len(PALETTE_CATEGORICAL)])
+        for i, z in enumerate(df["zona_hecho"])
+    ]
     fig = go.Figure()
-    fig.add_trace(go.Bar(
-        x=df["pct"],
-        y=df["zona_hecho"],
-        orientation="h",
-        marker_color=colors,
-        text=df["pct"].map(lambda v: f"{v:.1f}%"),
-        textposition="outside",
-        hovertemplate="<b>%{y}</b><br>Participación: %{x:.1f}%<br>Casos: %{customdata:,}<extra></extra>",
-        customdata=df["casos"],
-    ))
+    fig.add_trace(
+        go.Bar(
+            x=df["pct"],
+            y=df["zona_hecho"],
+            orientation="h",
+            marker_color=colors,
+            text=df["pct"].map(lambda v: f"{v:.1f}%"),
+            textposition="outside",
+            hovertemplate="<b>%{y}</b><br>Participación: %{x:.1f}%<br>Casos: %{customdata:,}<extra></extra>",
+            customdata=df["casos"],
+        )
+    )
     fig.update_layout(
         title=title,
         xaxis_title="Participación en la selección (%)",
@@ -375,15 +397,17 @@ def barras_apiladas_pct(
     fig = go.Figure()
     for col in pct.columns:
         etiqueta = str(col)
-        fig.add_trace(go.Bar(
-            name=etiqueta,
-            x=pct.index,
-            y=pct[col],
-            marker=dict(color=colores.get(etiqueta, "#94A3B8")),
-            legendgroup=etiqueta,
-            showlegend=True,
-            hovertemplate=f"<b>{col}</b><br>%{{x}}<br>%{{y:.1f}}%<extra></extra>",
-        ))
+        fig.add_trace(
+            go.Bar(
+                name=etiqueta,
+                x=pct.index,
+                y=pct[col],
+                marker=dict(color=colores.get(etiqueta, "#94A3B8")),
+                legendgroup=etiqueta,
+                showlegend=True,
+                hovertemplate=f"<b>{col}</b><br>%{{x}}<br>%{{y:.1f}}%<extra></extra>",
+            )
+        )
     fig.update_layout(
         barmode="stack",
         title=title,
@@ -409,7 +433,9 @@ def barras_apiladas_pct(
     return fig
 
 
-def _rango_y_pct(max_val: float, *, outside_labels: bool = False) -> tuple[float, float]:
+def _rango_y_pct(
+    max_val: float, *, outside_labels: bool = False
+) -> tuple[float, float]:
     """Límites del eje Y según el valor máximo observado (evita barras miniatura)."""
     if max_val <= 0:
         return 0.0, 10.0
@@ -436,10 +462,9 @@ def barras_ciclo(
     if sexo_resaltar == "Ambos":
         sub = df.groupby(["ciclo_vital", "sexo_victima"], as_index=False)["casos"].sum()
         sub = _ordenar_ciclo(sub)
-        pivot = (
-            sub.pivot(index="ciclo_vital", columns="sexo_victima", values="casos")
-            .fillna(0)
-        )
+        pivot = sub.pivot(
+            index="ciclo_vital", columns="sexo_victima", values="casos"
+        ).fillna(0)
         ciclos = _ordenar_categorias(pivot.index, CICLO_ORDEN)
         pivot = pivot.reindex(ciclos)
         total = float(pivot.values.sum())
@@ -449,42 +474,50 @@ def barras_ciclo(
                 continue
             casos = pivot[sexo]
             pct = casos / total * 100 if total else 0
-            fig.add_trace(go.Bar(
-                name=sexo,
-                x=pivot.index.astype(str),
-                y=pct,
-                marker_color=color,
-                text=pct.map(lambda v: f"{v:.1f}%" if v >= 3 else ""),
-                textposition="inside",
-                insidetextanchor="middle",
-                hovertemplate=(
-                    f"<b>{sexo}</b><br>%{{x}}<br>"
-                    "Participación: %{y:.1f}%<br>Casos: %{customdata:,}<extra></extra>"
-                ),
-                customdata=casos.astype(int),
-            ))
+            fig.add_trace(
+                go.Bar(
+                    name=sexo,
+                    x=pivot.index.astype(str),
+                    y=pct,
+                    marker_color=color,
+                    text=pct.map(lambda v: f"{v:.1f}%" if v >= 3 else ""),
+                    textposition="inside",
+                    insidetextanchor="middle",
+                    hovertemplate=(
+                        f"<b>{sexo}</b><br>%{{x}}<br>"
+                        "Participación: %{y:.1f}%<br>Casos: %{customdata:,}<extra></extra>"
+                    ),
+                    customdata=casos.astype(int),
+                )
+            )
         fig.update_layout(barmode="stack", legend_title="Sexo")
         pct_pivot = pivot / total * 100 if total else pivot * 0
         ymax = float(pct_pivot.sum(axis=1).max()) if len(pct_pivot) else 0.0
         y0, y1 = _rango_y_pct(ymax, outside_labels=False)
         fig.update_yaxes(range=[y0, y1])
     else:
-        sub = df[df["sexo_victima"] == sexo_resaltar].groupby("ciclo_vital", as_index=False)["casos"].sum()
+        sub = (
+            df[df["sexo_victima"] == sexo_resaltar]
+            .groupby("ciclo_vital", as_index=False)["casos"]
+            .sum()
+        )
         sub = _ordenar_ciclo(sub)
         total = sub["casos"].sum()
         sub["pct"] = sub["casos"] / total * 100 if total else 0
         color = COLOR_MASCULINO if sexo_resaltar == "Hombre" else COLOR_FEMENINO
         fig = go.Figure()
-        fig.add_trace(go.Bar(
-            x=sub["ciclo_vital"].astype(str),
-            y=sub["pct"],
-            marker_color=color,
-            text=sub["pct"].map(lambda v: f"{v:.1f}%"),
-            textposition="outside",
-            cliponaxis=False,
-            hovertemplate="<b>%{x}</b><br>Participación: %{y:.1f}%<br>Casos: %{customdata:,}<extra></extra>",
-            customdata=sub["casos"],
-        ))
+        fig.add_trace(
+            go.Bar(
+                x=sub["ciclo_vital"].astype(str),
+                y=sub["pct"],
+                marker_color=color,
+                text=sub["pct"].map(lambda v: f"{v:.1f}%"),
+                textposition="outside",
+                cliponaxis=False,
+                hovertemplate="<b>%{x}</b><br>Participación: %{y:.1f}%<br>Casos: %{customdata:,}<extra></extra>",
+                customdata=sub["casos"],
+            )
+        )
         ymax = float(sub["pct"].max()) if len(sub) else 0.0
     fig.update_layout(
         title=title,
@@ -517,9 +550,13 @@ def barras_severidad(
     plot = df.copy()
     orden = [s for s in SEVERIDAD_ORDEN if s in plot["categoria"].values]
     extra = [c for c in plot["categoria"] if c not in orden]
-    plot["categoria"] = pd.Categorical(plot["categoria"], categories=orden + extra, ordered=True)
+    plot["categoria"] = pd.Categorical(
+        plot["categoria"], categories=orden + extra, ordered=True
+    )
     plot = plot.sort_values("categoria")
-    return barras_horizontales(plot, "categoria", title=title, pct_col="pct", height=height)
+    return barras_horizontales(
+        plot, "categoria", title=title, pct_col="pct", height=height
+    )
 
 
 def barras_escenarios(
@@ -541,7 +578,9 @@ def barras_top_franjas(
 ) -> go.Figure:
     plot = df.copy()
     plot["rango_hora"] = plot["rango_hora"].map(normalizar_franja)
-    plot["combinacion"] = plot["dia_hecho"].astype(str) + " · " + plot["rango_hora"].astype(str)
+    plot["combinacion"] = (
+        plot["dia_hecho"].astype(str) + " · " + plot["rango_hora"].astype(str)
+    )
     plot = plot.groupby("combinacion", as_index=False)["casos"].sum()
     plot = plot.nlargest(top_n, "casos")
     return barras_horizontales(plot, "combinacion", title=title)
@@ -556,7 +595,11 @@ def heatmap_dia_hora(
     plot = df.copy()
     plot["rango_hora"] = plot["rango_hora"].map(normalizar_franja)
     pivot = plot.pivot_table(
-        index="dia_hecho", columns="rango_hora", values="casos", aggfunc="sum", fill_value=0
+        index="dia_hecho",
+        columns="rango_hora",
+        values="casos",
+        aggfunc="sum",
+        fill_value=0,
     )
     present_dias = [d for d in DIAS_ORDEN if d in pivot.index]
     pivot = pivot.reindex(present_dias if present_dias else pivot.index)

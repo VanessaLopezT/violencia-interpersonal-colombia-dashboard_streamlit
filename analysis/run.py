@@ -187,10 +187,9 @@ def _export_figuras_articulo(df: pd.DataFrame) -> None:
         c
         for c in [
             "Sin incapacidad",
-            "Leve (1-5 dias)",
-            "Moderada (6-15 dias)",
-            "Alta (16-30 dias)",
-            "Muy alta (>30 dias)",
+            "1 a 30",
+            "31 a 90",
+            "Más de 90",
             "Sin informacion",
         ]
         if c in sev.index
@@ -208,10 +207,11 @@ def _export_figuras_articulo(df: pd.DataFrame) -> None:
 def main() -> None:
     print("1. Limpieza y preparacion")
     df = prepare()
-    path = save_dataset(df)
+    path_pq, path_csv = save_dataset(df)
     constantes = [c for c in df.columns if df[c].nunique() <= 1]
     print(f"   Registros: {len(df):,} | Columnas constantes: {constantes}")
-    print(f"   Guardado: {path}")
+    print(f"   Parquet (pipeline): {path_pq}")
+    print(f"   CSV limpio (inspeccion): {path_csv}")
 
     print("2. Agregados OLAP para dashboard")
     export_dashboard_aggregates(df)

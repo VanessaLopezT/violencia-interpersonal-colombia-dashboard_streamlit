@@ -1,0 +1,37 @@
+{
+  "timestamp_utc": "2026-06-03T19:18:21.744161+00:00",
+  "filas_raw": 981611,
+  "filas_parquet": 981611,
+  "columnas_raw": 35,
+  "columnas_parquet": 26,
+  "cols_dropped": [
+    "contexto_hecho",
+    "codigo_dane_municipio",
+    "codigo_dane_departamento",
+    "grupo_mayor_menor_edad",
+    "grupo_edad_judicial",
+    "dias_incapacidad",
+    "orientacion_sexual",
+    "identidad_genero",
+    "transgenero",
+    "pueblo_indigena",
+    "tipo_discapacidad",
+    "pertenencia_grupal",
+    "pais_nacimiento"
+  ],
+  "cols_derived": [
+    "severidad_categoria",
+    "dias_incapacidad_num",
+    "anio_mes",
+    "fin_semana"
+  ],
+  "casefold_grupos_columnas_auditadas": {
+    "pertenencia_etnica": 0,
+    "escenario_hecho": 0,
+    "sexo_agresor": 0,
+    "escolaridad": 0,
+    "estado_civil": 0,
+    "actividad_hecho": 0
+  },
+  "parquet_csv_misma_forma": true
+}

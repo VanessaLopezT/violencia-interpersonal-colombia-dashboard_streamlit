@@ -16,6 +16,7 @@ if str(PROJECT_ROOT) not in sys.path:
 
 DATA_RAW = PROJECT_ROOT / "data" / "raw"
 DATASET_PARQUET = PROJECT_ROOT / "data" / "processed" / "dataset.parquet"
+DATASET_CSV = PROJECT_ROOT / "data" / "processed" / "dataset_limpio.csv"
 RAW_CSV_GLOB = "Violencia_interpersonal*.csv"
 YEAR_MIN, YEAR_MAX = 2015, 2024
 
@@ -57,9 +58,12 @@ COLUMN_RENAME_MAP = {
     "Pueblo Indígena": "pueblo_indigena",
 }
 
+# Valores institucionales INMLCF recodificados a «Sin informacion» (tras _norm_text).
+# No incluye «ninguno»/«ninguna»: en escolaridad o tipo_discapacidad pueden ser categorías válidas.
 MISSING_PATTERNS = [
     "sin informacion",
     "sin información",
+    "no sabe / no informa",
     "no reportado",
     "no aplica",
     "desconocido",
@@ -69,30 +73,52 @@ MISSING_PATTERNS = [
     "999",
 ]
 
-INCAPACIDAD_MAP = {
-    "0": 0,
-    "1 a 5": 3,
-    "6 a 15": 10,
-    "16 a 30": 23,
-    "31 a 60": 45,
-    "61 a 90": 75,
-    "91 a 120": 105,
-    "121 a 150": 135,
-    "151 o mas": 180,
-    "151 o más": 180,
+# Etiquetas INMLCF observadas en la fuente 2015-2024 (categorias gruesas).
+# Clave: texto normalizado (_norm_text). Valor: (severidad_categoria, punto medio dias).
+INCAPACIDAD_CATEGORIA_MAP: dict[str, tuple[str, float | None]] = {
+    "1 a 30": ("1 a 30", 15.0),
+    "31 a 90": ("31 a 90", 60.0),
+    "mas de 90": ("Más de 90", 91.0),
+    "cero": ("Sin incapacidad", 0.0),
+    "cero dias": ("Sin incapacidad", 0.0),
+    "cero dias y sin informacion": ("Sin incapacidad", 0.0),
+    "sin dias de incapacidad": ("Sin incapacidad", 0.0),
+    "sin informacion": ("Sin informacion", None),
 }
 
+# Columnas excluidas del parquet analitico (permanecen en CSV fuente en data/raw/).
+COLS_TO_DROP = [
+    "contexto_hecho",
+    "codigo_dane_municipio",
+    "codigo_dane_departamento",
+    "grupo_mayor_menor_edad",
+    "grupo_edad_judicial",
+    "dias_incapacidad",
+    "orientacion_sexual",
+    "identidad_genero",
+    "transgenero",
+    "pueblo_indigena",
+    "tipo_discapacidad",
+    "pertenencia_grupal",
+    "pais_nacimiento",
+]
 
-def _parse_incapacidad(value: object) -> float | np.nan:
-    if pd.isna(value):
-        return np.nan
+DERIVED_COLS = [
+    "severidad_categoria",
+    "dias_incapacidad_num",
+    "anio_mes",
+    "fin_semana",
+]
+
+
+def _map_incapacidad(value: object) -> tuple[str, float | None]:
+    """Mapea la categoria fuente a severidad_categoria y punto medio (sin extraer digitos)."""
+    if pd.isna(value) or str(value).strip() == "Sin informacion":
+        return ("Sin informacion", None)
     text = _norm_text(value)
-    if text in INCAPACIDAD_MAP:
-        return float(INCAPACIDAD_MAP[text])
-    digits = re.findall(r"\d+", str(text))
-    if digits:
-        return float(digits[0])
-    return np.nan
+    if text in INCAPACIDAD_CATEGORIA_MAP:
+        return INCAPACIDAD_CATEGORIA_MAP[text]
+    return ("Sin informacion", None)
 
 
 def _norm_text(value: object) -> object:
@@ -166,60 +192,40 @@ def prepare() -> pd.DataFrame:
         "presunto_agresor",
         "mecanismo_causal",
         "zona_hecho",
+        "mes_hecho",
+        "dia_hecho",
+        "pertenencia_etnica",
+        "escolaridad",
+        "estado_civil",
+        "actividad_hecho",
+        "sexo_agresor",
     ]:
         if col in df.columns:
             df[col] = canonize_column(df[col])
 
     df["anio_hecho"] = pd.to_numeric(df["anio_hecho"], errors="coerce").astype("Int64")
-    df["dias_incapacidad_num"] = df["dias_incapacidad"].map(_parse_incapacidad)
+    incap = df["dias_incapacidad"].map(_map_incapacidad)
+    df["severidad_categoria"] = incap.map(lambda t: t[0])
+    df["dias_incapacidad_num"] = incap.map(lambda t: t[1])
     df = df[
         (df["anio_hecho"] >= YEAR_MIN) & (df["anio_hecho"] <= YEAR_MAX)
     ].reset_index(drop=True)
 
     df["anio_mes"] = df["anio_hecho"].astype(str) + "-" + df["mes_hecho"].astype(str)
-    df["fin_semana"] = df["dia_hecho"].isin(
-        ["Sabado", "Sábado", "Domingo", "6 Sabado", "7 Domingo"]
-    )
-
-    def severidad(dias: float) -> str:
-        if pd.isna(dias):
-            return "Sin informacion"
-        if dias == 0:
-            return "Sin incapacidad"
-        if dias <= 5:
-            return "Leve (1-5 dias)"
-        if dias <= 15:
-            return "Moderada (6-15 dias)"
-        if dias <= 30:
-            return "Alta (16-30 dias)"
-        return "Muy alta (>30 dias)"
-
-    df["severidad_categoria"] = df["dias_incapacidad_num"].map(severidad)
+    dia_norm = df["dia_hecho"].astype(str).str.casefold()
+    df["fin_semana"] = dia_norm.isin(["sábado", "sabado", "domingo"])
 
     df = apply_to_dataframe(df)
 
-    # Columnas constantes, redundantes o con vacíos extremos que no aportan al análisis del dashboard
-    cols_to_drop = [
-        "contexto_hecho",             # Constante: 100% igual en el origen ('Lesiones no Fatales...')
-        "codigo_dane_municipio",      # Redundante: ya se dispone del nombre textual del municipio
-        "codigo_dane_departamento",   # Redundante: ya se dispone del nombre textual del departamento
-        "grupo_mayor_menor_edad",     # Redundante: la edad se agrupa con mayor resolución en ciclo_vital
-        "grupo_edad_judicial",        # Redundante: la edad se agrupa con mayor resolución en ciclo_vital
-        "dias_incapacidad",           # Redundante: reemplazado por la derivada severidad_categoria
-        "orientacion_sexual",         # Sparsity extrema: >95% de registros reportados como 'Sin informacion'
-        "identidad_genero",           # Sparsity extrema: >95% de registros reportados como 'Sin informacion'
-        "transgenero",                # Sparsity extrema: >95% de registros reportados como 'Sin informacion'
-        "pueblo_indigena",            # Sparsity extrema: nulo/desconocido en más del 98% del dataset general
-        "tipo_discapacidad",          # Sparsity extrema: alto nivel de subregistro administrativo de origen
-        "pertenencia_grupal",         # Sparsity extrema: alto nivel de subregistro administrativo de origen
-        "pais_nacimiento",            # Baja varianza: casi la totalidad de los registros corresponden a Colombia
-    ]
-    df = df.drop(columns=[c for c in cols_to_drop if c in df.columns], errors="ignore")
+    # Exclusiones documentadas en docs/preparacion_datos.md (estadísticas fuente 2015-2024, n=981611).
+    df = df.drop(columns=[c for c in COLS_TO_DROP if c in df.columns], errors="ignore")
 
     return df
 
 
-def save_dataset(df: pd.DataFrame) -> Path:
+def save_dataset(df: pd.DataFrame) -> tuple[Path, Path]:
+    """Guarda parquet (pipeline) y CSV UTF-8 (inspeccion/auditoria). Mismas filas y columnas."""
     DATASET_PARQUET.parent.mkdir(parents=True, exist_ok=True)
     df.to_parquet(DATASET_PARQUET, index=False)
-    return DATASET_PARQUET
+    df.to_csv(DATASET_CSV, index=False, encoding="utf-8")
+    return DATASET_PARQUET, DATASET_CSV

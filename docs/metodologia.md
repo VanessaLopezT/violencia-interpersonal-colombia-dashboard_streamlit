@@ -20,7 +20,7 @@ La violencia interpersonal genera lesiones, incapacidades y costos sociales en C
 
 **Fuente:** [Violencia interpersonal. Colombia, años 2015 a 2024. Cifras definitivas](https://www.datos.gov.co/en/Justicia-y-Derecho/Violencia-interpersonal-Colombia-a-os-2015-a-2024-/e3xi-4zq5/about_data), portal Datos Abiertos Colombia.
 
-**Volumen:** ~982.000 filas y 35 columnas en el catálogo; tras limpieza y filtrado temporal, **981.611 registros** (2015–2024) en **38 columnas** analíticas.
+**Volumen:** ~982.000 filas y 35 columnas en el catálogo; tras limpieza, filtrado temporal y exclusión de columnas administrativas, **981.611 registros** (2015–2024) en **26 columnas** en `dataset.parquet`.
 
 **Perfil de calidad:**
 - Cero duplicados por identificador.
@@ -40,24 +40,48 @@ Implementada en `src/prepare.py` y reglas de dominio en `app/text_es.py`:
 3. Normalización Unicode NFC y equivalencias de dominio (`normalize_text`, `DOMAIN_ALIASES`).
 4. Estandarización de faltantes (`MISSING_PATTERNS` → «Sin informacion»).
 5. Unificación de franjas horarias (`normalizar_franja` en `rango_hora`).
-6. Canonización por frecuencia modal (`canonize_column`) en departamento, municipio, escenario, agresor, mecanismo, zona y circunstancia detallada.
+6. Canonización por frecuencia modal (`canonize_column`) en departamento, municipio, escenario, agresor, mecanismo, zona, circunstancia detallada, **mes del hecho** y **día del hecho**.
 7. Derivación de variables analíticas:
-   - `dias_incapacidad_num`: punto medio del intervalo de incapacidad.
-   - `severidad_categoria`: clasificación ordinal de severidad medicolegal.
-   - `anio_mes`, `fin_semana`: apoyo temporal.
+   - `severidad_categoria`: categorías medicolegales INMLCF (`Sin incapacidad`, `1 a 30`, `31 a 90`, `Más de 90`, `Sin informacion`).
+   - `dias_incapacidad_num`: punto medio ordinal de cada intervalo INMLCF (0, 15, 60, 91).
+   - `anio_mes`, `fin_semana`: apoyo temporal (fin de semana a partir de día canonizado).
 8. Filtrado al rango 2015–2024.
-9. **Exclusión de `contexto_hecho`** del dataset exportado.
-10. Exportación a `data/processed/dataset.parquet`.
+9. **Exclusión** de columnas constantes, redundantes o fuera del cubo OLAP (`contexto_hecho`, códigos DANE, variables de edad redundantes, `dias_incapacidad` texto, campos demográficos de baja utilización en el dashboard).
+10. Exportación dual (mismas filas y columnas):
+    - `data/processed/dataset.parquet` — formato principal del pipeline.
+    - `data/processed/dataset_limpio.csv` — UTF-8 para inspección, auditoría y comparación con la fuente (no lo consume Streamlit).
+
+### Comparación fuente → dataset preparado
+
+| Métrica | Valor |
+|---------|-------|
+| Filas CSV original (renombrado) | 981.611 |
+| Filas dataset final (filtro 2015–2024) | 981.611 |
+| Columnas CSV original | 35 |
+| Columnas eliminadas | 13 |
+| Columnas derivadas añadidas | 4 |
+| Columnas finales exportadas | 26 |
+
+**Flujo:** CSV original (`data/raw/`) → limpieza (`src/prepare.py`) → `dataset_limpio.csv` + `dataset.parquet` → agregados OLAP (`analysis/run.py`) → dashboard Streamlit.
+
+Evidencia tabular para sustentación: `docs/evidencia_sustentacion/comparacion_antes_despues.md`. Verificación reproducible: `python analysis/verificar_preparacion.py`.
 
 ### Homologaciones aplicadas (alcance acordado)
 
 | Variable | Problema | Regla | Casos afectados (aprox.) |
 |----------|----------|-------|--------------------------|
-| `escenario_hecho` | Tres etiquetas INMLCF para el mismo concepto de vía pública/calle | Alias → «Vía pública o calle»: `Vía Pública`, `Calle (autopista, avenida, dentro de la ciudad)` y variante CSV `Calle (Autopista,Avenida,Dentro de La Ciudad)` | ~523.000 |
-| `circunstancia_detallada` | Cuatro pares duplicados solo por mayúsculas/tildes (p. ej. «Violencia Económica» / «Violencia económica») | `canonize_column` conserva la forma modal | ~12.500 |
+| `escenario_hecho` | Vía pública/calle y variantes de mayúsculas INMLCF | Alias + `canonize_column` | ~574.000 vía pública; ~50.000 pares título/minúsculas |
+| `pertenencia_etnica` | «Sin pertenencia étnica» / «Sin Pertenencia Étnica»; ROM/Rom | `canonize_column` (forma modal) | ~792.956 |
+| `escolaridad`, `estado_civil`, `actividad_hecho` | Pares por capitalización interna | `canonize_column` | ~1.300–33.000 |
+| `sexo_agresor` | «Transgenero» vs «Transgénero» | Alias → «Transgénero» | 39 |
+| `mes_hecho`, `dia_hecho` | Duplicados por capitalización | `canonize_column` | ~300.000 |
+| `circunstancia_detallada` | Pares por mayúsculas/tildes | `canonize_column` | ~12.500 |
 | `presunto_agresor` | «Amigo (a)» vs «Amigo(a)» | Alias → «Amigo(a)» | ~40.600 |
+| `dias_incapacidad` | Intervalos INMLCF (`1 a 30`, `31 a 90`, etc.) | Mapeo explícito a `severidad_categoria` | 981.611 |
 
-**No homologado en esta versión** (decisión explícita): mes/día con distinta capitalización, pertenencia étnica, grupo mayor/menor de edad, variantes adicionales de escenario (p. ej. «Vía pública» sin «o calle»), ni fusiones semánticas entre categorías INMLCF distintas en presunto agresor.
+Documentación detallada de la fase: `docs/preparacion_datos.md`.
+
+**No recodificado a «Sin informacion»** (decisión explícita): «Ninguno»/«Ninguna» en campos donde denotan categoría válida (p. ej. escolaridad); «No había sido implementada» en columnas excluidas del parquet.
 
 ## Fase 4 — Modelado (Modeling)
 

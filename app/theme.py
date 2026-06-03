@@ -54,6 +54,9 @@ HEATMAP_SCALE = [
     [1.0, "#1E3A5F"],
 ]
 
+# Mapa territorial animado (multicolor: azul → verde → amarillo → naranja → rojo)
+MAP_CHOROPLETH_SCALE = "Turbo"
+
 PLOTLY_TEMPLATE = "plotly_white"
 FONT_FAMILY = "Segoe UI, Arial, sans-serif"
 PLOTLY_CONFIG = {"displayModeBar": False}

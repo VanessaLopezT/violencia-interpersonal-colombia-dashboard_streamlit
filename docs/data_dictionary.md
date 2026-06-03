@@ -1,54 +1,63 @@
 # Diccionario de variables
 
-Dataset analítico: violencia interpersonal Colombia 2015–2024. **981.611 registros**, **38 columnas** (35 originales del CSV − `contexto_hecho` + 4 derivadas analíticas).
+Dataset analítico exportado: violencia interpersonal Colombia 2015–2024. **981.611 registros**, **26 columnas** en `data/processed/dataset.parquet`.
 
 | Variable | Descripción | Tipo | Uso |
 |---|---|---|---|
 | id | Identificador del registro | entero | trazabilidad |
-| anio_hecho | Año del hecho | entero | temporal |
+| anio_hecho | Año del hecho | entero | temporal / filtros |
 | sexo_victima | Sexo de la víctima | categórica | victimológico |
 | grupo_edad_quinquenal | Grupo etario quinquenal | categórica | victimológico |
-| grupo_mayor_menor_edad | Mayoría de edad | categórica | victimológico |
-| grupo_edad_judicial | Grupo etario judicial | categórica | victimológico |
-| ciclo_vital | Ciclo vital | categórica | victimológico |
-| pais_nacimiento | País de nacimiento | categórica | demográfico |
-| escolaridad | Escolaridad | categórica | demográfico |
-| estado_civil | Estado civil | categórica | demográfico |
-| tipo_discapacidad | Tipo de discapacidad | categórica | demográfico |
-| pertenencia_etnica | Pertenencia étnica | categórica | demográfico |
-| orientacion_sexual | Orientación sexual | categórica | sensible |
-| identidad_genero | Identidad de género | categórica | sensible |
-| transgenero | Transgénero | categórica | sensible |
-| pertenencia_grupal | Pertenencia grupal | categórica | demográfico |
-| mes_hecho | Mes del hecho | categórica | temporal |
-| dia_hecho | Día del hecho | categórica | temporal |
+| ciclo_vital | Ciclo vital | categórica | victimológico / filtros |
+| escolaridad | Escolaridad | categórica | reserva analítica |
+| estado_civil | Estado civil | categórica | reserva analítica |
+| pertenencia_etnica | Pertenencia étnica | categórica | demográfico / filtros |
+| mes_hecho | Mes del hecho (canonizado) | categórica | temporal |
+| dia_hecho | Día del hecho (canonizado) | categórica | temporal |
 | rango_hora | Rango horario (3 horas) | categórica | temporal |
-| codigo_dane_municipio | Código DANE municipio | entero | territorial |
-| municipio_hecho | Municipio | categórica | territorial |
-| departamento_hecho | Departamento | categórica | territorial |
-| codigo_dane_departamento | Código DANE departamento | entero | territorial |
-| localidad_hecho | Localidad | categórica | territorial |
-| zona_hecho | Zona urbana/rural | categórica | territorial |
+| municipio_hecho | Municipio | categórica | territorial / filtros |
+| departamento_hecho | Departamento | categórica | territorial / filtros |
+| localidad_hecho | Localidad | categórica | territorial (Bogotá D.C.) |
+| zona_hecho | Zona urbana/rural | categórica | territorial / filtros |
 | escenario_hecho | Escenario del hecho | categórica | situacional |
-| actividad_hecho | Actividad durante el hecho | categórica | situacional |
-| circunstancia_detallada | Circunstancia detallada | categórica | situacional |
+| actividad_hecho | Actividad durante el hecho | categórica | reserva analítica |
+| circunstancia_detallada | Circunstancia detallada | categórica | reserva analítica |
 | mecanismo_causal | Mecanismo causal | categórica | situacional |
-| diagnostico_topografico | Diagnóstico topográfico | categórica | severidad |
-| sexo_agresor | Sexo del agresor | categórica | relacional |
+| diagnostico_topografico | Diagnóstico topográfico | categórica | reserva analítica |
+| sexo_agresor | Sexo del agresor | categórica | reserva analítica |
 | presunto_agresor | Presunto agresor | categórica | relacional |
-| dias_incapacidad | Días de incapacidad (intervalo) | categórica | severidad |
-| pueblo_indigena | Pueblo indígena | categórica | demográfico |
-| dias_incapacidad_num | Punto medio del intervalo (derivada) | numérico | severidad |
-| severidad_categoria | Clasificación ordinal (derivada) | categórica | severidad |
+| dias_incapacidad_num | Punto medio del intervalo INMLCF (derivada) | numérico | severidad |
+| severidad_categoria | Categoría medicolegal INMLCF (derivada) | categórica | severidad |
 | anio_mes | Año-mes concatenado (derivada) | categórica | temporal |
 | fin_semana | Indicador fin de semana (derivada) | booleano | temporal |
 
-## Variable excluida: contexto_hecho
+## Columnas leídas del CSV pero excluidas del parquet
 
-En el CSV fuente, **Contexto del Hecho** tiene una sola categoría en el 100 % de los registros (*1 Lesiones no Fatales por Violencia Interpersonal*). Se lee durante la importación posicional, pero **no se exporta** a `dataset.parquet` porque no aporta variación analítica.
+Se importan posicionalmente desde el CSV (35 columnas) y se eliminan en `src/prepare.py` por constante, redundancia o baja utilidad en el cubo OLAP actual:
 
-## Homologaciones aplicadas (ver `docs/metodologia.md`)
+- `contexto_hecho` — constante (100 % «Lesiones no Fatales por Violencia Interpersonal»).
+- `codigo_dane_municipio`, `codigo_dane_departamento` — redundantes con nombres DANE.
+- `grupo_mayor_menor_edad`, `grupo_edad_judicial` — redundantes con `ciclo_vital` / `grupo_edad_quinquenal`.
+- `dias_incapacidad` — reemplazada por `severidad_categoria` y `dias_incapacidad_num`.
+- `orientacion_sexual`, `identidad_genero`, `transgenero`, `pueblo_indigena`, `tipo_discapacidad`, `pertenencia_grupal`, `pais_nacimiento`.
 
-- **Escenario:** tres etiquetas de vía pública/calle unificadas en «Vía pública o calle».
-- **Circunstancia detallada:** pares duplicados por mayúsculas/tildes unificados por frecuencia modal.
-- **Presunto agresor:** «Amigo (a)» y «Amigo(a)» → «Amigo(a)».
+## Severidad medicolegal
+
+`severidad_categoria` refleja las categorías INMLCF presentes en la fuente 2015–2024:
+
+| Categoría | Significado |
+|---|---|
+| Sin incapacidad | Cero días de incapacidad registrados |
+| 1 a 30 | Intervalo de 1 a 30 días |
+| 31 a 90 | Intervalo de 31 a 90 días |
+| Más de 90 | Más de 90 días |
+| Sin informacion | Sin dato o no reportado |
+
+`dias_incapacidad_num` almacena el punto medio ordinal de cada intervalo (0, 15, 60, 91) para apoyo analítico offline.
+
+## Homologaciones aplicadas (ver `docs/preparacion_datos.md` y `docs/metodologia.md`)
+
+- **Escenario:** variantes vía pública/calle y administración pública unificadas por alias + canonización.
+- **Pertenencia étnica, escolaridad, estado civil, actividad, sexo agresor:** duplicados ortográficos unificados por `canonize_column` (forma modal).
+- **Mes y día del hecho:** canonización a 12 y 7 categorías respectivamente.
+- **Circunstancia detallada y presunto agresor:** pares por mayúsculas/tildes y alias Amigo(a).

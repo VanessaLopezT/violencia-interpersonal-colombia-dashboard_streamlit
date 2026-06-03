@@ -112,7 +112,11 @@ if vista == "Mapa de calor temporal":
         fig,
         use_container_width=True,
         key="chart_territorio_mapa",
-        config={"displayModeBar": False},
+        config={
+            "displayModeBar": False,
+            "scrollZoom": False,
+            "doubleClick": False,
+        },
     )
 
 if vista == "Urbano y rural":

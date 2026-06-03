@@ -10,7 +10,16 @@ python analysis/run.py
 streamlit run app/streamlit_app.py
 ```
 
-`run.py` genera `dataset.parquet` (38 columnas, análisis offline; sin `contexto_hecho`) y cinco agregados para el dashboard:
+`run.py` genera el dataset limpio y cinco agregados para el dashboard:
+
+| Archivo | Rol |
+|---------|-----|
+| `data/processed/dataset.parquet` | **Formato principal** del pipeline (OLAP, clustering, figuras) |
+| `data/processed/dataset_limpio.csv` | Mismas filas y columnas que el parquet; **solo inspección, auditoría y comparación** (UTF-8) |
+
+Ambos tienen **26 columnas analíticas** y **981.611 registros** tras `src/prepare.py`. El dashboard **no** carga el dataset completo; usa agregados OLAP.
+
+`run.py` también genera:
 `agg_filtros`, `agg_territorial`, `agg_demografia`, `agg_patrones`, `agg_dia_hora` (más
 `cluster_summary.json` y figura en `articulo/figuras/` para el informe).
 Streamlit **no** carga el dataset completo de ~980k filas; usa solo esos agregados OLAP.
@@ -19,7 +28,7 @@ Streamlit **no** carga el dataset completo de ~980k filas; usa solo esos agregad
 
 ```text
 data/raw/                 CSV original (INMLCF)
-data/processed/           dataset.parquet + agg_*.parquet
+data/processed/           dataset.parquet, dataset_limpio.csv, agg_*.parquet
 src/prepare.py            limpieza y preprocesamiento
 analysis/run.py           pipeline CRISP-DM + agregados OLAP
 app/
@@ -59,6 +68,15 @@ Optimizaciones activas en la capa `app/`: pestañas con render perezoso, `@st.ca
 - Metodología CRISP-DM: `docs/metodologia.md`
 - Guion de sustentación: `docs/sustentacion.md`
 - Diccionario de variables: `docs/data_dictionary.md`
+- Preparación de datos (Fase 3): `docs/preparacion_datos.md`
+- Evidencia comparativa sustentación: `docs/evidencia_sustentacion/comparacion_antes_despues.md`
+
+Verificación reproducible:
+
+```bash
+python analysis/verificar_preparacion.py
+python analysis/generar_evidencia_sustentacion.py
+```
 
 ## Advertencia
 

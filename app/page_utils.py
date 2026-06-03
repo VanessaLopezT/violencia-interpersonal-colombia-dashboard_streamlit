@@ -66,7 +66,7 @@ def cached_figure(
     payload: str,
     extra: str = "",
     chart_height: int | None = None,
-    _figures_v: int = 4,
+    _figures_v: int = 6,
 ) -> str:
     """Construye figura Plotly una vez por combinacion filtro + vista."""
     from app import charts
@@ -143,7 +143,7 @@ def show_cached_chart(
 # Registrar ciclo por separado (firma distinta)
 @st.cache_data(show_spinner=False)
 def cached_ciclo_figure(
-    cache_key: tuple, payload: str, sexo: str, _figures_v: int = 4
+    cache_key: tuple, payload: str, sexo: str, _figures_v: int = 6
 ) -> str:
     from app.charts import barras_ciclo
 

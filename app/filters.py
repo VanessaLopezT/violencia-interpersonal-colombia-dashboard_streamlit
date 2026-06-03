@@ -139,7 +139,7 @@ def _ensure_selected_in_options(
 
 @st.cache_data
 def apply_filters(
-    _aggs: Aggregates, f: FilterState, _slice_version: int = 3
+    _aggs: Aggregates, f: FilterState, _slice_version: int = 5
 ) -> dict[str, Any]:
     return compute_slices(_aggs, f)
 

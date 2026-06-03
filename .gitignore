@@ -2,3 +2,8 @@ data/raw/*.csv
 /__pycache__/
 *.pyc
 *.pyd
+
+
+data/processed/
+*.csv
+*.xlsx

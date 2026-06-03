@@ -14,12 +14,19 @@ DEPTO_BOGOTA = "Bogotá D.C."
 
 DOMAIN_ALIASES: dict[str, str] = {
     "Bogotá, D.C.": "Bogotá D.C.",
-    # Escenario: tres etiquetas INMLCF para vía pública / calle → una sola categoría.
+    # Escenario: variantes INMLCF de vía pública / calle.
     "Calle (Autopista,Avenida,Dentro de La Ciudad)": "Vía pública o calle",
     "Calle (autopista, avenida, dentro de la ciudad)": "Vía pública o calle",
     "Vía Pública": "Vía pública o calle",
+    "Vía pública": "Vía pública o calle",
+    # Escenario: misma categoría con distinto formato de mayúsculas y puntuación.
+    "Establecimientos dedicados a la administración pública (cortes, juzgados, ministerios, etc.)": (
+        "Establecimientos Dedicados a la Administración Pública (Cortes,Juzgados,Ministerios,Etc)"
+    ),
     # Presunto agresor: unificar formato Amigo(a) / Amigo (a).
     "Amigo (a)": "Amigo(a)",
+    # Sexo agresor: variante sin tilde (39) → forma modal con tilde (45).
+    "Transgenero": "Transgénero",
 }
 
 CANON_COLS = [
@@ -30,6 +37,13 @@ CANON_COLS = [
     "mecanismo_causal",
     "zona_hecho",
     "circunstancia_detallada",
+    "mes_hecho",
+    "dia_hecho",
+    "pertenencia_etnica",
+    "escolaridad",
+    "estado_civil",
+    "actividad_hecho",
+    "sexo_agresor",
 ]
 
 UI = {

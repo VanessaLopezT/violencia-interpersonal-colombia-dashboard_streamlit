@@ -3,6 +3,9 @@
 
 from __future__ import annotations
 
+import re
+import unicodedata
+
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
@@ -12,11 +15,12 @@ from app.theme import (
     COLOR_ZONA,
     FONT_FAMILY,
     HEATMAP_SCALE,
+    MAP_CHOROPLETH_SCALE,
     PALETA_GRUPO_EDAD,
     PALETTE_CATEGORICAL,
     PLOTLY_TEMPLATE,
 )
-from app.text_es import normalizar_franja
+from app.text_es import DEPTO_BOGOTA, normalizar_franja
 
 DIAS_ORDEN = [
     "1 Lunes",
@@ -534,10 +538,9 @@ def barras_ciclo(
 
 SEVERIDAD_ORDEN = [
     "Sin incapacidad",
-    "Leve (1-5 dias)",
-    "Moderada (6-15 dias)",
-    "Alta (16-30 dias)",
-    "Muy alta (>30 dias)",
+    "1 a 30",
+    "31 a 90",
+    "Más de 90",
     "Sin informacion",
 ]
 
@@ -584,6 +587,172 @@ def barras_top_franjas(
     plot = plot.groupby("combinacion", as_index=False)["casos"].sum()
     plot = plot.nlargest(top_n, "casos")
     return barras_horizontales(plot, "combinacion", title=title)
+
+
+def _norm_depto_geo_key(name: str) -> str:
+    text = unicodedata.normalize("NFKD", str(name).strip())
+    text = "".join(c for c in text if not unicodedata.combining(c))
+    return re.sub(r"[^a-z0-9]+", " ", text.lower()).strip()
+
+
+def _geo_depto_lookup(geojson: dict) -> dict[str, str]:
+    lookup: dict[str, str] = {}
+    for feature in geojson.get("features", []):
+        nombre = feature.get("properties", {}).get("NOMBRE_DPT")
+        if nombre:
+            lookup[_norm_depto_geo_key(nombre)] = nombre
+    return lookup
+
+
+def _map_departamento_geo(
+    departamento: str, lookup: dict[str, str]
+) -> str | None:
+    if departamento == DEPTO_BOGOTA:
+        return lookup.get(_norm_depto_geo_key("SANTAFE DE BOGOTA D.C"))
+    return lookup.get(_norm_depto_geo_key(departamento))
+
+
+def _geo_departamentos(geojson: dict) -> list[str]:
+    return sorted(
+        feat["properties"]["NOMBRE_DPT"]
+        for feat in geojson.get("features", [])
+        if feat.get("properties", {}).get("NOMBRE_DPT")
+    )
+
+
+def _intensidad_anual(casos: pd.Series) -> pd.Series:
+    out = pd.Series(0.0, index=casos.index, dtype=float)
+    pos = casos > 0
+    if pos.any():
+        out.loc[pos] = casos.loc[pos].rank(pct=True, method="average")
+    return out
+
+
+def _completar_mapa_departamentos(
+    plot: pd.DataFrame,
+    geojson: dict,
+    year_min: int,
+    year_max: int,
+) -> pd.DataFrame:
+    """Todos los departamentos del GeoJSON en cada año (casos=0 si no hay filtro)."""
+    deptos = _geo_departamentos(geojson)
+    years = list(range(int(year_min), int(year_max) + 1))
+    grid = pd.MultiIndex.from_product(
+        [deptos, years], names=["geo_depto", "anio_hecho"]
+    ).to_frame(index=False)
+    if plot.empty:
+        agg = pd.DataFrame(columns=["geo_depto", "anio_hecho", "casos"])
+    else:
+        agg = plot.groupby(["geo_depto", "anio_hecho"], as_index=False)["casos"].sum()
+    complete = grid.merge(agg, on=["geo_depto", "anio_hecho"], how="left")
+    complete["casos"] = complete["casos"].fillna(0).astype(int)
+    complete["intensidad"] = complete.groupby("anio_hecho")["casos"].transform(
+        _intensidad_anual
+    )
+    complete["anio_hecho"] = complete["anio_hecho"].astype(int)
+    return complete
+
+
+def mapa_colombia_timeline(
+    df: pd.DataFrame,
+    geojson: dict,
+    year_min: int,
+    year_max: int,
+) -> go.Figure:
+    """Mapa coroplético por departamento con animación anual."""
+    lookup = _geo_depto_lookup(geojson)
+    deptos_geo = _geo_departamentos(geojson)
+    if not deptos_geo:
+        return _layout(go.Figure(), height=480)
+
+    if df.empty:
+        plot = _completar_mapa_departamentos(df, geojson, year_min, year_max)
+    else:
+        plot = df.copy()
+        plot["anio_hecho"] = pd.to_numeric(plot["anio_hecho"], errors="coerce")
+        plot = plot.dropna(subset=["anio_hecho"])
+        plot = plot[
+            (plot["anio_hecho"] >= year_min) & (plot["anio_hecho"] <= year_max)
+        ].copy()
+        plot["geo_depto"] = plot["departamento_hecho"].map(
+            lambda d: _map_departamento_geo(str(d), lookup)
+        )
+        plot = plot.dropna(subset=["geo_depto"])
+        plot = _completar_mapa_departamentos(plot, geojson, year_min, year_max)
+
+    if plot.empty:
+        return _layout(go.Figure(), height=480)
+
+    fig = px.choropleth(
+        plot,
+        geojson=geojson,
+        locations="geo_depto",
+        featureidkey="properties.NOMBRE_DPT",
+        color="intensidad",
+        animation_frame="anio_hecho",
+        animation_group="geo_depto",
+        range_color=(0, 1),
+        color_continuous_scale=MAP_CHOROPLETH_SCALE,
+        custom_data=["casos"],
+        labels={"intensidad": "Percentil en el año", "casos": "Casos"},
+        title="Casos registrados por departamento",
+    )
+    fig.update_geos(
+        fitbounds="geojson",
+        visible=False,
+        showframe=False,
+        showcoastlines=False,
+        lataxis_range=[-4.5, 13.5],
+        lonaxis_range=[-79.5, -66.5],
+        domain=dict(x=[0.0, 1.0], y=[0.22, 1.0]),
+    )
+    hover_tpl = (
+        "<b>%{{location}}</b><br>Año: {year}<br>"
+        "Casos: %{{customdata[0]:,}}<extra></extra>"
+    )
+    if fig.frames:
+        for frame in fig.frames:
+            frame.data[0].hovertemplate = hover_tpl.format(year=frame.name)
+        fig.update(data=fig.frames[0].data)
+    else:
+        fig.update_traces(
+            hovertemplate=(
+                "<b>%{location}</b><br>Casos: %{z:,}<extra></extra>"
+            )
+        )
+    fig.update_coloraxes(
+        colorbar=dict(
+            orientation="h",
+            title=dict(text="Percentil en el año", side="bottom", font=dict(size=11)),
+            tickformat=".0%",
+            len=0.72,
+            thickness=10,
+            x=0.14,
+            xanchor="left",
+            y=0.165,
+            yanchor="middle",
+            ticklen=3,
+        )
+    )
+    fig.update_layout(
+        margin=dict(l=0, r=0, t=36, b=0),
+        dragmode=False,
+        uirevision="mapa-colombia-timeline",
+    )
+    if fig.layout.sliders:
+        slider = fig.layout.sliders[0]
+        slider.len = 0.92
+        slider.x = 0.04
+        slider.xanchor = "left"
+        slider.y = 0.0
+        slider.yanchor = "bottom"
+        slider.pad.t = 16
+        slider.pad.b = 0
+        slider.pad.l = 0
+        slider.pad.r = 0
+        slider.currentvalue.prefix = "Año: "
+        slider.currentvalue.font.size = 11
+    return _layout(fig, height=580, margin=dict(l=0, r=0, t=40, b=0))
 
 
 def heatmap_dia_hora(

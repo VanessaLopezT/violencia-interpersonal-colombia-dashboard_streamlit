@@ -99,6 +99,9 @@ _HALLAZGO_BUILDERS = {
     "territorio": _hallazgo_territorio,
     "personas": _hallazgo_personas,
     "patrones": _hallazgo_patrones,
+    "modelo": lambda data: (
+        "Modelo de clasificación supervisada para estimar el tipo de agresor según el contexto."
+    ),
 }
 
 
@@ -211,11 +214,21 @@ def _kpi_patrones(data: dict[str, Any]) -> list[tuple[str, str]]:
     ]
 
 
+def _kpi_modelo(data: dict[str, Any]) -> list[tuple[str, str]]:
+    return [
+        ("Modelo entrenado", "Árbol de Decisión"),
+        ("Estratificación", "5 Vínculos"),
+        ("Profundidad del Árbol", "6 niveles"),
+        ("Validación cruzada", "Split 80/20"),
+    ]
+
+
 _KPI_BUILDERS = {
     "panorama": _kpi_panorama,
     "territorio": _kpi_territorio,
     "personas": _kpi_personas,
     "patrones": _kpi_patrones,
+    "modelo": _kpi_modelo,
 }
 
 

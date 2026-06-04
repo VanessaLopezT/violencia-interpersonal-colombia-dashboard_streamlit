@@ -21,8 +21,8 @@ Ambos tienen **26 columnas analíticas** y **981.611 registros** tras `src/prepa
 
 `run.py` también genera:
 `agg_filtros`, `agg_territorial`, `agg_demografia`, `agg_patrones`, `agg_dia_hora` (más
-`cluster_summary.json` y figura en `articulo/figuras/` para el informe).
-Streamlit **no** carga el dataset completo de ~980k filas; usa solo esos agregados OLAP.
+el modelo `random_forest.pkl`, las métricas de prueba `model_metrics.json` y los metadatos `model_features.json`).
+Streamlit **no** carga el dataset completo de ~980k filas; usa solo esos agregados OLAP y el modelo entrenado.
 
 ## Estructura
 
@@ -39,14 +39,13 @@ app/
   narrative.py            textos y KPIs por eje
   page_utils.py           setup, pestañas perezosas, cache de figuras
   streamlit_app.py        inicio
-  pages/                  4 secciones del dashboard
+  pages/                  5 secciones del dashboard
 docs/
   metodologia.md          CRISP-DM completo
   sustentacion.md         guion oral
-articulo/                 informe LaTeX
 ```
 
-## Dashboard — cuatro secciones
+## Dashboard — cinco secciones
 
 | Sección | Página | Contenido |
 |---------|--------|-----------|
@@ -54,8 +53,9 @@ articulo/                 informe LaTeX
 | Territorio | 2 · Territorio | Departamentos, zona urbana/rural, municipios |
 | Personas y tiempo | 3 · Personas y tiempo | Sexo-edad, ciclo vital, día-hora |
 | Patrones | 4 · Patrones | Mecanismos, escenarios, gravedad, agresor |
+| Modelo Predictivo | 5 · Modelo Predictivo | Simulador interactivo de triage de agresores y métricas de desempeño |
 
-Filtros globales: periodo, departamento, municipio/ciudad, zona, sexo de la víctima, pertenencia étnica y ciclo vital (panel lateral; aplican a todas las secciones).
+Filtros globales: periodo, departamento, municipio/ciudad, zona, sexo de la víctima, pertenencia étnica y ciclo vital (panel lateral; aplican a todas las secciones descriptivas).
 
 ## Rendimiento (sustentación en vivo)
 

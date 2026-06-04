@@ -23,7 +23,7 @@ KEY_ETNIA = "filtro_etnia"
 KEY_PERGRUPO = "filtro_pertenencia_grupal"
 KEY_CICLO = "filtro_ciclo"
 CANON_KEY = "canonical_filters"
-TOTAL_ETAPAS = 4
+TOTAL_ETAPAS = 5
 
 
 def _default_canonical(years: list[int]) -> dict[str, object]:

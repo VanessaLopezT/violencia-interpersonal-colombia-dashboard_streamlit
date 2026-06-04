@@ -3,14 +3,19 @@
 from __future__ import annotations
 
 import json
+import pickle
 import sys
 from pathlib import Path
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from sklearn.cluster import KMeans
-from sklearn.preprocessing import LabelEncoder
+from sklearn.model_selection import train_test_split
+from sklearn.pipeline import Pipeline
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import classification_report, accuracy_score
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
@@ -19,16 +24,6 @@ if str(PROJECT_ROOT) not in sys.path:
 from src.prepare import save_dataset, prepare
 
 PROCESSED = PROJECT_ROOT / "data" / "processed"
-CLUSTER_COLS = [
-    "sexo_victima",
-    "grupo_edad_quinquenal",
-    "ciclo_vital",
-    "zona_hecho",
-    "escenario_hecho",
-    "mecanismo_causal",
-    "presunto_agresor",
-    "departamento_hecho",
-]
 FILTER_DIMS = [
     "anio_hecho",
     "departamento_hecho",
@@ -117,92 +112,109 @@ def export_dashboard_aggregates(df: pd.DataFrame) -> None:
     print(f"   Agregados dashboard en {PROCESSED}")
 
 
-def _clustering(df: pd.DataFrame, k: int = 4, n: int = 50000) -> None:
-    """Segmentacion opcional para el informe; no alimenta el dashboard."""
-    sample = (
-        df[CLUSTER_COLS]
-        .sample(min(n, len(df)), random_state=42)
-        .fillna("Sin informacion")
-    )
-    matrix = np.column_stack(
-        [LabelEncoder().fit_transform(sample[c].astype(str)) for c in CLUSTER_COLS]
-    )
-    KMeans(n_clusters=k, random_state=42, n_init=10).fit_predict(matrix)
-    summary = {
-        "k": k,
-        "muestra": len(sample),
-        "interpretacion": (
-            "Cuatro perfiles modales: hombres adultos en cabecera municipal, mecanismo contundente "
-            "y escenarios de vivienda o vía pública; la diferenciación principal aparece en "
-            "presunto agresor (vecino, persona desconocida, conocido sin trato)."
-        ),
-    }
-    path = PROCESSED / "cluster_summary.json"
-    path.write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"  K-means k={k}, muestra={len(sample):,} (referencia informe)")
-    print(f"  Resumen: {path}")
 
+def _train_decision_tree(df: pd.DataFrame) -> None:
+    """Entrena y evalúa un árbol de decisión para clasificar presunto_agresor."""
+    # Filtrar registros "Sin informacion" y hacer copia limpia
+    clean_df = df[df["presunto_agresor"] != "Sin informacion"].copy()
 
-FIGURAS_ARTICULO = PROJECT_ROOT / "articulo" / "figuras"
+    # Mapear presunto_agresor a las 5 macro-categorías
+    clean_df["agresor_tipo"] = clean_df["presunto_agresor"].replace({
+        "Conocido sin ningun trato": "Conocido sin trato",
+        "Conocido sin ningún trato": "Conocido sin trato",
+        "Conocido": "Conocido sin trato",
+        "Otros conocidos": "Conocido sin trato",
+        "Agresor desconocido": "Desconocido/Delincuencia",
+        "Delincuencia común": "Desconocido/Delincuencia",
+        "Delincuencia común": "Desconocido/Delincuencia",
+        "Bandas criminales": "Desconocido/Delincuencia",
+        "Otro": "Desconocido/Delincuencia",
+        "Policía": "Fuerza Pública",
+        "Policía": "Fuerza Pública",
+        "Amigo(a)": "Amistad/Entorno",
+        "Compañero (a) de trabajo": "Amistad/Entorno",
+        "Compañero (a) de estudio": "Amistad/Entorno",
+        "Compañero (a) de celda": "Amistad/Entorno",
+        "Compañero (a) de cohabitación": "Amistad/Entorno"
+    })
 
-
-def _export_figuras_articulo(df: pd.DataFrame) -> None:
-    """Figuras estaticas minimas para el informe LaTeX (funcion analitica, no decorativas)."""
-    plt.rcParams["font.family"] = "DejaVu Sans"
-    FIGURAS_ARTICULO.mkdir(parents=True, exist_ok=True)
-
-    annual = (
-        df.groupby("anio_hecho", as_index=False)
-        .size()
-        .rename(columns={"size": "casos"})
-    )
-    annual["anio_hecho"] = annual["anio_hecho"].astype(int)
-    fig, ax = plt.subplots(figsize=(10, 5))
-    ax.plot(
-        annual["anio_hecho"], annual["casos"], marker="o", color="#1E3A5F", linewidth=2
-    )
-    ax.set_title("Evolución anual de casos registrados (2015–2024)")
-    ax.set_xlabel("Año")
-    ax.set_ylabel("Casos")
-    ax.set_xticks(annual["anio_hecho"])
-    ax.set_xticklabels(annual["anio_hecho"].astype(str))
-    ax.grid(axis="y", alpha=0.3)
-    fig.savefig(
-        FIGURAS_ARTICULO / "01_evolucion_anual.png", dpi=150, bbox_inches="tight"
-    )
-    plt.close(fig)
-
-    dept = df.groupby("departamento_hecho").size().sort_values(ascending=True).tail(8)
-    fig, ax = plt.subplots(figsize=(9, 5))
-    dept.plot(kind="barh", ax=ax, color="#1E3A5F")
-    ax.set_title("Departamentos con mayor número de registros")
-    ax.set_xlabel("Casos")
-    ax.set_ylabel("")
-    fig.savefig(
-        FIGURAS_ARTICULO / "02_top_departamentos.png", dpi=150, bbox_inches="tight"
-    )
-    plt.close(fig)
-
-    sev = df.groupby("severidad_categoria").size().sort_values(ascending=True)
-    orden = [
-        c
-        for c in [
-            "Sin incapacidad",
-            "1 a 30",
-            "31 a 90",
-            "Más de 90",
-            "Sin informacion",
-        ]
-        if c in sev.index
+    TARGETS = [
+        "Conocido sin trato",
+        "Desconocido/Delincuencia",
+        "Vecino",
+        "Fuerza Pública",
+        "Amistad/Entorno"
     ]
-    sev = sev.reindex(orden if orden else sev.index)
-    fig, ax = plt.subplots(figsize=(8, 4.5))
-    sev.plot(kind="barh", ax=ax, color="#3D7EA6")
-    ax.set_title("Distribución por severidad medicolegal")
-    ax.set_xlabel("Casos")
-    ax.set_ylabel("")
-    fig.savefig(FIGURAS_ARTICULO / "03_severidad.png", dpi=150, bbox_inches="tight")
-    plt.close(fig)
+    clean_df = clean_df[clean_df["agresor_tipo"].isin(TARGETS)].copy()
+
+    FEATURES = [
+        "sexo_victima",
+        "ciclo_vital",
+        "zona_hecho",
+        "escenario_hecho",
+        "mecanismo_causal",
+        "fin_semana",
+        "rango_hora"
+    ]
+    TARGET = "agresor_tipo"
+
+    clean_df = clean_df.dropna(subset=FEATURES + [TARGET])
+
+    X = clean_df[FEATURES]
+    y = clean_df[TARGET]
+
+    # División de datos (Train-Test Split 80/20)
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42, stratify=y
+    )
+
+    # Preprocesador
+    preprocessor = ColumnTransformer(
+        transformers=[
+            ('cat', OneHotEncoder(handle_unknown='ignore', sparse_output=False), FEATURES)
+        ]
+    )
+
+    # Pipeline
+    pipeline = Pipeline(steps=[
+        ('preprocessor', preprocessor),
+        ('classifier', RandomForestClassifier(n_estimators=100, max_depth=12, class_weight='balanced', random_state=42, n_jobs=-1))
+    ])
+
+    print("  Entrenando Bosque Aleatorio (Random Forest)...")
+    pipeline.fit(X_train, y_train)
+
+    # Evaluación
+    y_pred = pipeline.predict(X_test)
+    acc = accuracy_score(y_test, y_pred)
+    report = classification_report(y_test, y_pred, output_dict=True)
+
+    print(f"  Modelo entrenado. Exactitud en prueba (Test): {acc:.4f}")
+
+    # Guardar modelo
+    model_path = PROCESSED / "random_forest.pkl"
+    with open(model_path, "wb") as f:
+        pickle.dump(pipeline, f)
+
+    # Guardar métricas
+    metrics = {
+        "accuracy": acc,
+        "classification_report": report
+    }
+    metrics_path = PROCESSED / "model_metrics.json"
+    metrics_path.write_text(json.dumps(metrics, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    # Guardar metadatos de características para poblar selectores en UI
+    features_metadata = {}
+    for col in FEATURES:
+        # Convertir a str, boolean o lo que sea a formato string para JSON
+        vals = sorted([str(val) for val in X[col].unique()])
+        features_metadata[col] = vals
+
+    features_path = PROCESSED / "model_features.json"
+    features_path.write_text(json.dumps(features_metadata, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    print(f"  Archivos del modelo guardados en {PROCESSED}")
 
 
 def main() -> None:
@@ -217,12 +229,9 @@ def main() -> None:
     print("2. Agregados OLAP para dashboard")
     export_dashboard_aggregates(df)
 
-    print("3. Segmentacion K-means (referencia informe, opcional)")
-    _clustering(df)
+    print("3. Entrenando modelo predictivo (Árbol de Decisión)")
+    _train_decision_tree(df)
 
-    print("4. Figuras para articulo")
-    _export_figuras_articulo(df)
-    print(f"   Guardado en {FIGURAS_ARTICULO}")
     print("Listo. Ejecute: streamlit run app/streamlit_app.py")
 
 

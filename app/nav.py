@@ -38,26 +38,32 @@ SECTIONS: list[dict[str, str]] = [
         "desc": "Lesión",
         "path": "pages/4_Patrones_y_cierre.py",
     },
+    {
+        "id": "modelo",
+        "titulo": "Modelo",
+        "desc": "Predictivo",
+        "path": "pages/5_Modelo_predictivo.py",
+    },
 ]
 
 _NAV_CSS = f"""
 <style>
-/* Barra superior: fila de 5 botones de seccion */
-div[data-testid="stHorizontalBlock"]:has(> div[data-testid="column"]:nth-child(5):last-child) {{
+/* Barra superior: fila de 6 botones de seccion */
+div[data-testid="stHorizontalBlock"]:has(> div[data-testid="column"]:nth-child(6):last-child) {{
     align-items: stretch;
     gap: 0.65rem;
 }}
-div[data-testid="stHorizontalBlock"]:has(> div[data-testid="column"]:nth-child(5):last-child)
+div[data-testid="stHorizontalBlock"]:has(> div[data-testid="column"]:nth-child(6):last-child)
 > div[data-testid="column"] {{
     flex: 1 1 0%;
     min-width: 0;
 }}
-div[data-testid="stHorizontalBlock"]:has(> div[data-testid="column"]:nth-child(5):last-child)
+div[data-testid="stHorizontalBlock"]:has(> div[data-testid="column"]:nth-child(6):last-child)
 div[data-testid="stButton"] {{
     width: 100%;
     margin: 0;
 }}
-div[data-testid="stHorizontalBlock"]:has(> div[data-testid="column"]:nth-child(5):last-child)
+div[data-testid="stHorizontalBlock"]:has(> div[data-testid="column"]:nth-child(6):last-child)
 div[data-testid="stButton"] > button {{
     height: 5.75rem;
     min-height: 5.75rem;
@@ -77,21 +83,21 @@ div[data-testid="stButton"] > button {{
     text-align: center;
     overflow: hidden;
 }}
-div[data-testid="stHorizontalBlock"]:has(> div[data-testid="column"]:nth-child(5):last-child)
+div[data-testid="stHorizontalBlock"]:has(> div[data-testid="column"]:nth-child(6):last-child)
 div[data-testid="stButton"] > button[kind="primary"] {{
     background-color: {COLOR_PRIMARY};
     border: 1px solid {COLOR_PRIMARY};
     color: #ffffff;
 }}
-div[data-testid="stHorizontalBlock"]:has(> div[data-testid="column"]:nth-child(5):last-child)
+div[data-testid="stHorizontalBlock"]:has(> div[data-testid="column"]:nth-child(6):last-child)
 div[data-testid="stButton"] > button[kind="primary"]:hover {{
     background-color: #2a4f7a;
     border-color: #2a4f7a;
     color: #ffffff;
 }}
-div[data-testid="stHorizontalBlock"]:has(> div[data-testid="column"]:nth-child(5):last-child)
+div[data-testid="stHorizontalBlock"]:has(> div[data-testid="column"]:nth-child(6):last-child)
 div[data-testid="stButton"] > button[kind="secondary"],
-div[data-testid="stHorizontalBlock"]:has(> div[data-testid="column"]:nth-child(5):last-child)
+div[data-testid="stHorizontalBlock"]:has(> div[data-testid="column"]:nth-child(6):last-child)
 div[data-testid="stButton"] > button:disabled {{
     background-color: #d8e2ec;
     border: 1px solid {COLOR_PRIMARY};

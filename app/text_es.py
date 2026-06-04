@@ -119,6 +119,13 @@ STORY = {
         "etapa": 4,
         "titulo_menu": "4 · Patrones",
         "pregunta": "Mecanismo, escenario, gravedad y agresor",
+        "siguiente_titulo": "5 · Modelo Predictivo",
+        "siguiente_path": "pages/5_Modelo_predictivo.py",
+    },
+    "modelo": {
+        "etapa": 5,
+        "titulo_menu": "5 · Modelo Predictivo",
+        "pregunta": "Predicción del Vínculo del Presunto Agresor",
         "siguiente_titulo": None,
         "siguiente_path": None,
     },

@@ -85,9 +85,10 @@ Documentación detallada de la fase: `docs/preparacion_datos.md`.
 
 ## Fase 4 — Modelado (Modeling)
 
-En este proyecto, «modelado» corresponde al **análisis exploratorio descriptivo (EDA)** y a la **construcción del cubo OLAP** para el dashboard. No se emplea predicción supervisada.
+El proyecto implementa tanto modelado descriptivo de datos como aprendizaje automático:
 
-**Cubo OLAP** (generado en `analysis/run.py`):
+**1. Cubo OLAP** (generado en `analysis/run.py`):
+Mapeo multidimensional optimizado para la agregación rápida en la interfaz de usuario.
 
 | Elemento | Descripción |
 |----------|-------------|
@@ -103,9 +104,15 @@ En este proyecto, «modelado» corresponde al **análisis exploratorio descripti
 - `agg_patrones.parquet` — escenario, mecanismo, severidad, agresor
 - `agg_dia_hora.parquet` — día de la semana, franja horaria
 
-La serie anual del dashboard se obtiene agregando `agg_filtros` por año.
+**2. Bosque Aleatorio / Random Forest (Clasificación Supervisada):**
+Entrenado con división de datos 80/20 (Train/Test) para predecir el vínculo o relación del agresor (`presunto_agresor`) en **5 macro-categorías** equilibradas:
+- *Conocido sin trato*
+- *Desconocido / Delincuencia*
+- *Vecino*
+- *Fuerza Pública / Custodia*
+- *Amistad / Entorno*
 
-**Clustering K-means (opcional, secundario):** sobre muestra de 50.000 registros con ocho variables categóricas, k=4. Resultado documentado en el informe LaTeX; no se muestra en el dashboard.
+Variables predictoras utilizadas: `sexo_victima`, `ciclo_vital`, `zona_hecho`, `escenario_hecho`, `mecanismo_causal`, `fin_semana` y `rango_hora`. Se entrena usando un pipeline de Scikit-Learn que contiene codificación de variables mediante `OneHotEncoder` y un clasificador `RandomForestClassifier` con `n_estimators=100` y `max_depth=12` para capturar relaciones no lineales y mejorar la exactitud.
 
 ## Fase 5 — Evaluación (Evaluation)
 
@@ -118,7 +125,7 @@ Criterios de validación aplicados:
 
 ## Fase 6 — Despliegue (Deployment)
 
-**Dashboard Streamlit** (`app/streamlit_app.py`): guion visual en cuatro secciones con navegación superior, KPIs, pestañas y filtros globales.
+**Dashboard Streamlit** (`app/streamlit_app.py`): guion visual en cinco secciones con navegación superior, KPIs, pestañas y filtros globales.
 
 | Sección | Pregunta guía | Contenido principal |
 |---------|---------------|---------------------|
@@ -126,10 +133,10 @@ Criterios de validación aplicados:
 | **2 · Territorio** | Casos por departamento y municipio | Top departamentos, zona urbana/rural, drill municipal o top 5 localidades (Bogotá D.C.) |
 | **3 · Personas y tiempo** | Perfil de víctimas y momento del hecho | Sexo × edad, ciclo vital, heatmap día-hora, top franjas |
 | **4 · Patrones** | Mecanismo, escenario, gravedad y agresor | Top mecanismos y escenarios, severidad, presunto agresor |
+| **5 · Modelo Predictivo** | Predicción del vínculo del presunto agresor | Triage interactivo, probabilidades en tiempo real, métricas académicas (Accuracy, Precision, Recall) e importancia de variables |
 
 **Filtros globales (sidebar):** rango de años, departamento, municipio/ciudad, zona, sexo de la víctima, pertenencia étnica, ciclo vital; navegación Anterior/Siguiente entre secciones.
 
-**Figura estática:** `articulo/figuras/01_evolucion_anual.png` para el informe LaTeX.
 
 Guion oral de sustentación: `docs/sustentacion.md`.
 

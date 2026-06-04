@@ -21,6 +21,7 @@ class FilterState:
     sexo: str
     zona: str
     pertenencia_etnica: str
+    pertenencia_grupal: str
     ciclo_vital: str
 
 
@@ -42,6 +43,8 @@ def _mask(
         m &= df["zona_hecho"] == f.zona
     if f.pertenencia_etnica != UI["todos_etnia"]:
         m &= df["pertenencia_etnica"] == f.pertenencia_etnica
+    if f.pertenencia_grupal != UI["todos_pertenencia_grupal"]:
+        m &= df["pertenencia_grupal"] == f.pertenencia_grupal
     if f.ciclo_vital != UI["todos_ciclo"]:
         m &= df["ciclo_vital"] == f.ciclo_vital
     return m
@@ -72,6 +75,7 @@ def compute_slices(aggs: Aggregates, f: FilterState) -> dict[str, Any]:
         f.sexo,
         f.zona,
         f.pertenencia_etnica,
+        f.pertenencia_grupal,
         f.ciclo_vital,
         casos,
     )

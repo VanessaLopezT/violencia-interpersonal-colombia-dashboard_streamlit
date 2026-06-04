@@ -86,6 +86,93 @@ INCAPACIDAD_CATEGORIA_MAP: dict[str, tuple[str, float | None]] = {
     "sin informacion": ("Sin informacion", None),
 }
 
+# Homologacion semantica de Pertenencia Grupal. Las claves se comparan sin tildes,
+# puntuacion ni diferencias de mayusculas para evitar duplicados en filtros.
+PERTENENCIA_GRUPAL_ALIASES: dict[str, str] = {
+    "adolescentes en conflicto con la ley": "Adolescentes en conflicto con la ley",
+    "barras futboleras": "Tribus urbanas",
+    "cabezas rapadas": "Tribus urbanas",
+    "comunidad lgbt": "Sector social LGBTI (OSIGD)",
+    "comunidad lgbti": "Sector social LGBTI (OSIGD)",
+    "conductores de vehiculos de servicio publico": "Conductores de vehículos de servicio público",
+    "consumidores de sustancias psicoactivas drogas alcohol etc": "Personas consumidoras de sustancias psicoactivas",
+    "defensores de derechos humanos": "Defensores de derechos humanos",
+    "defensores de los derechos humanos": "Defensores de derechos humanos",
+    "desmovilizados o reinsertados": "Personas desmovilizadas o reinsertadas",
+    "desplazados as": "Persona en condición de desplazamiento",
+    "ejercicio de actividades de defensa de los derechos humanos": "Defensores de derechos humanos",
+    "ejercicio de actividades de periodismo": "Personas que ejercen actividades de periodismo",
+    "ejercicio de actividades gremiales o sindicales": "Personas que ejercen actividades gremiales o sindicales",
+    "ejercicio de actividades judiciales": "Funcionarios judiciales",
+    "ejercicio de actividades politicas": "Personas que ejercen actividades políticas",
+    "ejercicio de actividades relacionadas con la salud en zonas de conflicto": "Trabajadores de la salud / Misión Humanitaria",
+    "ejercicio de actividades sindicales o gremiales": "Personas que ejercen actividades gremiales o sindicales",
+    "ejercicio del trabajo sexual": "Personas en situación de prostitución",
+    "ex convictos as": "Ex convictos (as)",
+    "funcionarios judiciales": "Funcionarios judiciales",
+    "grupos etnicos": "Grupos étnicos",
+    "habitante de la calle": "Persona habitante de la calle",
+    "herido y o enfermo bajo proteccion sanitaria o medica": "Trabajadores de la salud / Misión Humanitaria",
+    "hopper": "Tribus urbanas",
+    "lider": "Líderes cívicos",
+    "lideres civicos": "Líderes cívicos",
+    "maestro educador": "Maestro / educador",
+    "metaleros": "Tribus urbanas",
+    "mujer cabeza de hogar": "Mujer cabeza de hogar o de familia",
+    "mujer cabeza de hogar o de familia": "Mujer cabeza de hogar o de familia",
+    "ninos ninas adolescentes bajo la proteccion del icbf": "Niños, niñas y adolescentes bajo protección del ICBF",
+    "ninos ninas adolescentes en condicion de abandono": "Niños, niñas y adolescentes en condición de abandono",
+    "ninos ninas y adolescentes bajo proteccion del icbf": "Niños, niñas y adolescentes bajo protección del ICBF",
+    "ninguno": "Ninguno",
+    "otro": "Otro",
+    "persona adicta a una droga natural o sintetica": "Personas consumidoras de sustancias psicoactivas",
+    "persona bajo custodia": "Personas bajo custodia",
+    "persona con capacidades diferentes": "Personas con capacidades diferentes",
+    "persona en condicion de desplazamiento": "Persona en condición de desplazamiento",
+    "persona en situacion de calle": "Persona habitante de la calle",
+    "persona en situacion de prostitucion": "Personas en situación de prostitución",
+    "persona habitante de la calle": "Persona habitante de la calle",
+    "persona mayores en hogares de cuidado": "Personas mayores en hogares de cuidado",
+    "persona privada de la libertad": "Persona privada de la libertad",
+    "persona que ejerce actividades de periodismo": "Personas que ejercen actividades de periodismo",
+    "persona que ejerce actividades gremiales o sindicales": "Personas que ejercen actividades gremiales o sindicales",
+    "persona que ejerce actividades politicas": "Personas que ejercen actividades políticas",
+    "persona que ejerce actividades relacionadas con la salud en zonas de conflicto": "Trabajadores de la salud / Misión Humanitaria",
+    "persona que ejerce de actividades gremiales o sindicales": "Personas que ejercen actividades gremiales o sindicales",
+    "persona que ejerce de actividades relacionadas con la salud en zonas de conflicto": "Trabajadores de la salud / Misión Humanitaria",
+    "persona que ejercen actividades de periodismo": "Personas que ejercen actividades de periodismo",
+    "persona que ejercen actividades gremiales o sindicales": "Personas que ejercen actividades gremiales o sindicales",
+    "persona que ejercen actividades politicas": "Personas que ejercen actividades políticas",
+    "persona que ejercen actividades relacionadas con la salud en zonas de conflicto": "Trabajadores de la salud / Misión Humanitaria",
+    "persona recluida en establecimiento de rehabilitacion y pabellones psiquiatricos": "Persona recluida en establecimientos de rehabilitación y pabellones psiquiátricos",
+    "persona recluida en establecimientos de rehabilitacion y pabellones psiquiatricos": "Persona recluida en establecimientos de rehabilitación y pabellones psiquiátricos",
+    "personas bajo custodia": "Personas bajo custodia",
+    "personas con capacidades diferentes": "Personas con capacidades diferentes",
+    "personas con orientacion sexual diversa lgtbi": "Sector social LGBTI (OSIGD)",
+    "personas desmovilizadas o reinsertadas": "Personas desmovilizadas o reinsertadas",
+    "personas en situacion de prostitucion": "Personas en situación de prostitución",
+    "personas mayores en hogares de cuidado": "Personas mayores en hogares de cuidado",
+    "personas que ejercen actividades de periodismo": "Personas que ejercen actividades de periodismo",
+    "personas que ejercen actividades gremiales o sindicales": "Personas que ejercen actividades gremiales o sindicales",
+    "personas que ejercen actividades politicas": "Personas que ejercen actividades políticas",
+    "personas que ejercen actividades relacionadas con la salud en zonas de conflicto": "Trabajadores de la salud / Misión Humanitaria",
+    "pertenecientes a grupos etnicos": "Grupos étnicos",
+    "pertenencia a pandillas": "Tribus urbanas",
+    "pertenencia multiple": "Pertenencia múltiple",
+    "presunto colaborador de grupo ilegal": "Presunto colaborador de grupo ilegal",
+    "punks": "Tribus urbanas",
+    "reclamante de tierras": "Reclamante de tierras",
+    "religioso": "Religiosos",
+    "religiosos": "Religiosos",
+    "sector social lgbt": "Sector social LGBTI (OSIGD)",
+    "sector social lgbti osigd": "Sector social LGBTI (OSIGD)",
+    "servidor publico": "Servidor público",
+    "servidor publico personeros alcaldes": "Servidor público",
+    "sin informacion": "Sin informacion",
+    "trabajadores de la salud mision humanitaria": "Trabajadores de la salud / Misión Humanitaria",
+    "tribus urbanas": "Tribus urbanas",
+}
+
 # Columnas excluidas del parquet analitico (permanecen en CSV fuente en data/raw/).
 COLS_TO_DROP = [
     "contexto_hecho",
@@ -99,7 +186,6 @@ COLS_TO_DROP = [
     "transgenero",
     "pueblo_indigena",
     "tipo_discapacidad",
-    "pertenencia_grupal",
     "pais_nacimiento",
 ]
 
@@ -108,6 +194,23 @@ DERIVED_COLS = [
     "dias_incapacidad_num",
     "anio_mes",
     "fin_semana",
+]
+
+CANONICAL_TEXT_COLS = [
+    "departamento_hecho",
+    "municipio_hecho",
+    "escenario_hecho",
+    "presunto_agresor",
+    "mecanismo_causal",
+    "zona_hecho",
+    "mes_hecho",
+    "dia_hecho",
+    "pertenencia_etnica",
+    "pertenencia_grupal",
+    "escolaridad",
+    "estado_civil",
+    "actividad_hecho",
+    "sexo_agresor",
 ]
 
 
@@ -127,6 +230,20 @@ def _norm_text(value: object) -> object:
     text = unicodedata.normalize("NFKD", str(value).strip())
     text = "".join(c for c in text if not unicodedata.combining(c))
     return re.sub(r"\s+", " ", text).lower()
+
+
+def _alias_key(value: object) -> str:
+    text = _norm_text(value)
+    if pd.isna(text):
+        return ""
+    text = re.sub(r"[^a-z0-9]+", " ", str(text))
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def _homologar_pertenencia_grupal(series: pd.Series) -> pd.Series:
+    return series.map(
+        lambda v: PERTENENCIA_GRUPAL_ALIASES.get(_alias_key(v), v) if pd.notna(v) else v
+    )
 
 
 def _find_csv() -> Path:
@@ -185,23 +302,12 @@ def prepare() -> pd.DataFrame:
             lambda v: normalizar_franja(v) if pd.notna(v) else v
         )
 
-    for col in [
-        "departamento_hecho",
-        "municipio_hecho",
-        "escenario_hecho",
-        "presunto_agresor",
-        "mecanismo_causal",
-        "zona_hecho",
-        "mes_hecho",
-        "dia_hecho",
-        "pertenencia_etnica",
-        "escolaridad",
-        "estado_civil",
-        "actividad_hecho",
-        "sexo_agresor",
-    ]:
+    for col in CANONICAL_TEXT_COLS:
         if col in df.columns:
             df[col] = canonize_column(df[col])
+
+    if "pertenencia_grupal" in df.columns:
+        df["pertenencia_grupal"] = _homologar_pertenencia_grupal(df["pertenencia_grupal"])
 
     df["anio_hecho"] = pd.to_numeric(df["anio_hecho"], errors="coerce").astype("Int64")
     incap = df["dias_incapacidad"].map(_map_incapacidad)

@@ -36,6 +36,7 @@ FILTER_DIMS = [
     "sexo_victima",
     "zona_hecho",
     "pertenencia_etnica",
+    "pertenencia_grupal",
     "ciclo_vital",
 ]
 

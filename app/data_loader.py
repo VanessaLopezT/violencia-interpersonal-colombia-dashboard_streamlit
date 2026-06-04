@@ -38,6 +38,7 @@ class Aggregates:
 REQUIRED_FILTER_COLS = [
     "municipio_hecho",
     "pertenencia_etnica",
+    "pertenencia_grupal",
     "ciclo_vital",
 ]
 

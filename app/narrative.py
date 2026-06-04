@@ -205,7 +205,7 @@ def _kpi_patrones(data: dict[str, Any]) -> list[tuple[str, str]]:
             ),
         ),
         (
-            "Agresor más frecuente",
+            "Vínculo con agresor modal",
             str(agr_top["categoria"]) if agr_top is not None else "N/D",
         ),
     ]

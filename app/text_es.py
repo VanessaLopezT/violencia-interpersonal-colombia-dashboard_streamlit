@@ -14,6 +14,11 @@ DEPTO_BOGOTA = "Bogotá D.C."
 
 DOMAIN_ALIASES: dict[str, str] = {
     "Bogotá, D.C.": "Bogotá D.C.",
+    "Quindio": "Quindío",
+    # Zona del hecho: misma categoria con/sin espacio antes del parentesis.
+    "Centro poblado(corregimiento, inspección de policía y caserío)": (
+        "Centro poblado (corregimiento, inspección de policía y caserío)"
+    ),
     # Escenario: variantes INMLCF de vía pública / calle.
     "Calle (Autopista,Avenida,Dentro de La Ciudad)": "Vía pública o calle",
     "Calle (autopista, avenida, dentro de la ciudad)": "Vía pública o calle",
@@ -25,6 +30,10 @@ DOMAIN_ALIASES: dict[str, str] = {
     ),
     # Presunto agresor: unificar formato Amigo(a) / Amigo (a).
     "Amigo (a)": "Amigo(a)",
+    # Pertenencia grupal: limpiar separadores y espacios duplicados usados en filtros.
+    "Maestro - educador": "Maestro / educador",
+    "Maestro/Educador": "Maestro / educador",
+    "Persona habitante de  la calle": "Persona habitante de la calle",
     # Sexo agresor: variante sin tilde (39) → forma modal con tilde (45).
     "Transgenero": "Transgénero",
 }
@@ -44,6 +53,7 @@ CANON_COLS = [
     "estado_civil",
     "actividad_hecho",
     "sexo_agresor",
+    "pertenencia_grupal",
 ]
 
 UI = {
@@ -54,12 +64,14 @@ UI = {
     "zona": "Zona del hecho",
     "sexo_victima": "Sexo de la víctima",
     "pertenencia_etnica": "Pertenencia étnica",
+    "pertenencia_grupal": "Pertenencia grupal",
     "ciclo_vital": "Ciclo vital",
     "todos": "Todos los departamentos",
     "todos_municipio": "Todos los municipios",
     "todos_zona": "Todas las zonas",
     "todos_sexo": "Ambos sexos",
     "todos_etnia": "Toda pertenencia étnica",
+    "todos_pertenencia_grupal": "Toda pertenencia grupal",
     "todos_ciclo": "Todos los ciclos vitales",
     "filtros_territorio": "Territorio",
     "filtros_victima": "Perfil de la víctima",

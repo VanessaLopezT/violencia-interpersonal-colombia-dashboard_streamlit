@@ -20,6 +20,7 @@ KEY_MUNICIPIO = "filtro_municipio"
 KEY_SEXO = "filtro_sexo"
 KEY_ZONA = "filtro_zona"
 KEY_ETNIA = "filtro_etnia"
+KEY_PERGRUPO = "filtro_pertenencia_grupal"
 KEY_CICLO = "filtro_ciclo"
 CANON_KEY = "canonical_filters"
 TOTAL_ETAPAS = 4
@@ -33,6 +34,7 @@ def _default_canonical(years: list[int]) -> dict[str, object]:
         "sexo": UI["todos_sexo"],
         "zona": UI["todos_zona"],
         "etnia": UI["todos_etnia"],
+        "per_grupo": UI["todos_pertenencia_grupal"],
         "ciclo": UI["todos_ciclo"],
     }
 
@@ -56,6 +58,7 @@ def _sync_widgets_from_canonical(years: list[int]) -> None:
         (KEY_SEXO, "sexo"),
         (KEY_ZONA, "zona"),
         (KEY_ETNIA, "etnia"),
+        (KEY_PERGRUPO, "per_grupo"),
         (KEY_CICLO, "ciclo"),
     ):
         if widget_key not in st.session_state:
@@ -71,6 +74,7 @@ def _sync_canonical_from_widgets(
     sexo: str,
     zona: str,
     etnia: str,
+    per_grupo: str,
     ciclo: str,
 ) -> None:
     canon = _load_canonical(years)
@@ -80,6 +84,7 @@ def _sync_canonical_from_widgets(
     canon["sexo"] = sexo
     canon["zona"] = zona
     canon["etnia"] = etnia
+    canon["per_grupo"] = per_grupo
     canon["ciclo"] = ciclo
 
 
@@ -153,6 +158,7 @@ def _reset_filters(years: list[int]) -> None:
     st.session_state[KEY_SEXO] = canon["sexo"]
     st.session_state[KEY_ZONA] = canon["zona"]
     st.session_state[KEY_ETNIA] = canon["etnia"]
+    st.session_state[KEY_PERGRUPO] = canon["per_grupo"]
     st.session_state[KEY_CICLO] = canon["ciclo"]
     apply_filters.clear()
     st.rerun()
@@ -174,7 +180,7 @@ def _municipios_opciones(
     limite = None if departamento != UI["todos"] else 50
     if limite:
         ranking = ranking.head(limite)
-    return ranking["municipio_hecho"].astype(str).tolist()
+    return sorted(ranking["municipio_hecho"].astype(str).unique())
 
 
 def _opciones_unicas(
@@ -252,6 +258,16 @@ def render_sidebar(
     etnias = _ensure_selected_in_options(KEY_ETNIA, etnias, UI["todos_etnia"])
     etnia = st.sidebar.selectbox(UI["pertenencia_etnica"], etnias, key=KEY_ETNIA)
 
+    per_grupos = [UI["todos_pertenencia_grupal"]] + _opciones_unicas(
+        aggs.filtros, "pertenencia_grupal"
+    )
+    per_grupos = _ensure_selected_in_options(
+        KEY_PERGRUPO, per_grupos, UI["todos_pertenencia_grupal"]
+    )
+    pertenencia_grupal = st.sidebar.selectbox(
+        UI["pertenencia_grupal"], per_grupos, key=KEY_PERGRUPO
+    )
+
     ciclos_presentes = _opciones_unicas(aggs.filtros, "ciclo_vital", CICLO_ORDEN)
     ciclo_opts = [UI["todos_ciclo"]] + ciclos_presentes
     ciclo_opts = _ensure_selected_in_options(KEY_CICLO, ciclo_opts, UI["todos_ciclo"])
@@ -269,6 +285,7 @@ def render_sidebar(
         sexo=sexo,
         zona=zona,
         etnia=etnia,
+        per_grupo=pertenencia_grupal,
         ciclo=ciclo,
     )
 
@@ -280,6 +297,7 @@ def render_sidebar(
         sexo=sexo,
         zona=zona,
         pertenencia_etnica=etnia,
+        pertenencia_grupal=pertenencia_grupal,
         ciclo_vital=ciclo,
     )
     data = apply_filters(aggs, f)

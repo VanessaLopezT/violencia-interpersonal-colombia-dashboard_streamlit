@@ -81,6 +81,13 @@ def cached_figure(
             title="Departamentos con más casos registrados",
             pct_col="pct",
         ),
+        "dept_tasa_top10": lambda d: charts.barras_horizontales(
+            d,
+            "departamento_hecho",
+            x_col="tasa",
+            title="Departamentos con mayor tasa de casos por 100.000 habitantes",
+            pct_col=None,
+        ),
         "zona": charts.barras_zona_pct,
         "edad_sexo": charts.barras_apiladas_pct,
         "heatmap_dh": charts.heatmap_dia_hora,

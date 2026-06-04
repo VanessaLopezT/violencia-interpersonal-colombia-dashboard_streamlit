@@ -216,9 +216,9 @@ def _kpi_patrones(data: dict[str, Any]) -> list[tuple[str, str]]:
 
 def _kpi_modelo(data: dict[str, Any]) -> list[tuple[str, str]]:
     return [
-        ("Modelo entrenado", "Árbol de Decisión"),
+        ("Modelo entrenado", "Bosque Aleatorio"),
         ("Estratificación", "5 Vínculos"),
-        ("Profundidad del Árbol", "6 niveles"),
+        ("Profundidad Máxima", "12 niveles"),
         ("Validación cruzada", "Split 80/20"),
     ]
 

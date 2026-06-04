@@ -151,6 +151,10 @@ CHART_AYUDA: dict[str, str] = {
         "Departamentos con más casos en la selección. "
         "La barra más larga concentra más registros; el % es sobre el filtro activo."
     ),
+    "dept_tasa_top10": (
+        "Departamentos con mayor tasa de casos por 100.000 habitantes en la selección. "
+        "Normaliza los registros por población (DANE 2020), revelando la incidencia real del fenómeno."
+    ),
     "zona": (
         "Proporción de casos por zona del hecho. "
         "Compare cabecera municipal frente a centro poblado y rural disperso."

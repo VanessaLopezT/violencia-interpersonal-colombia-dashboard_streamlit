@@ -196,7 +196,7 @@ with tab_metrics:
     st.markdown("##### Ficha Técnica del Bosque Aleatorio (Random Forest)")
     st.markdown(
         f"""
-        Para evaluar científicamente la calidad de este modelo, se aplicó una división de datos:
+        Para evaluar la calidad de este modelo, se aplicó una división de datos:
         - **80% de los datos** para el entrenamiento del algoritmo.
         - **20% de los datos** para prueba (Test) de generalización.
         
@@ -263,5 +263,35 @@ with tab_metrics:
         margin=dict(l=20, r=50, t=20, b=20)
     )
     st.plotly_chart(fig_imp, use_container_width=True, config=PLOTLY_CONFIG)
+
+    # Confusion Matrix Visualization
+    st.markdown("---")
+    st.markdown("##### Matriz de Confusión")
+    st.markdown(
+        "Permite contrastar los valores reales registrados (filas) frente a las predicciones estimadas por el modelo (columnas):"
+    )
+
+    if "confusion_matrix" in metrics and "classes" in metrics:
+        cm_data = metrics["confusion_matrix"]
+        labels = metrics["classes"]
+        
+        # Plotly Heatmap
+        fig_cm = go.Figure(data=go.Heatmap(
+            z=cm_data,
+            x=labels,
+            y=labels,
+            colorscale="Blues",
+            text=cm_data,
+            texttemplate="%{text}",
+            textfont={"size": 11},
+            hoverinfo="x+y+z"
+        ))
+        fig_cm.update_layout(
+            xaxis_title="Predicción (Modelo)",
+            yaxis_title="Realidad (INMLCF)",
+            height=400,
+            margin=dict(l=50, r=50, t=30, b=50)
+        )
+        st.plotly_chart(fig_cm, use_container_width=True, config=PLOTLY_CONFIG)
 
 render_cierre_etapa("modelo")

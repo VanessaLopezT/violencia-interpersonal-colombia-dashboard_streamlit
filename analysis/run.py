@@ -15,7 +15,7 @@ from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import classification_report, accuracy_score
+from sklearn.metrics import classification_report, accuracy_score, confusion_matrix
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
@@ -113,8 +113,8 @@ def export_dashboard_aggregates(df: pd.DataFrame) -> None:
 
 
 
-def _train_decision_tree(df: pd.DataFrame) -> None:
-    """Entrena y evalúa un árbol de decisión para clasificar presunto_agresor."""
+def _train_random_forest(df: pd.DataFrame) -> None:
+    """Entrena y evalúa un modelo de bosque aleatorio (Random Forest) para clasificar presunto_agresor."""
     # Filtrar registros "Sin informacion" y hacer copia limpia
     clean_df = df[df["presunto_agresor"] != "Sin informacion"].copy()
 
@@ -165,7 +165,7 @@ def _train_decision_tree(df: pd.DataFrame) -> None:
 
     # División de datos (Train-Test Split 80/20)
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42, stratify=y
+        X, y, test_size=0.2, random_state=16000, stratify=y
     )
 
     # Preprocesador
@@ -178,7 +178,7 @@ def _train_decision_tree(df: pd.DataFrame) -> None:
     # Pipeline
     pipeline = Pipeline(steps=[
         ('preprocessor', preprocessor),
-        ('classifier', RandomForestClassifier(n_estimators=100, max_depth=12, class_weight='balanced', random_state=42, n_jobs=-1))
+        ('classifier', RandomForestClassifier(n_estimators=100, max_depth=12, class_weight='balanced', random_state=16000, n_jobs=-1))
     ])
 
     print("  Entrenando Bosque Aleatorio (Random Forest)...")
@@ -188,6 +188,8 @@ def _train_decision_tree(df: pd.DataFrame) -> None:
     y_pred = pipeline.predict(X_test)
     acc = accuracy_score(y_test, y_pred)
     report = classification_report(y_test, y_pred, output_dict=True)
+    classes_list = list(pipeline.classes_)
+    cm = confusion_matrix(y_test, y_pred, labels=classes_list)
 
     print(f"  Modelo entrenado. Exactitud en prueba (Test): {acc:.4f}")
 
@@ -199,7 +201,9 @@ def _train_decision_tree(df: pd.DataFrame) -> None:
     # Guardar métricas
     metrics = {
         "accuracy": acc,
-        "classification_report": report
+        "classification_report": report,
+        "confusion_matrix": cm.tolist(),
+        "classes": classes_list
     }
     metrics_path = PROCESSED / "model_metrics.json"
     metrics_path.write_text(json.dumps(metrics, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -229,8 +233,8 @@ def main() -> None:
     print("2. Agregados OLAP para dashboard")
     export_dashboard_aggregates(df)
 
-    print("3. Entrenando modelo predictivo (Árbol de Decisión)")
-    _train_decision_tree(df)
+    print("3. Entrenando modelo predictivo (Bosque Aleatorio / Random Forest)")
+    _train_random_forest(df)
 
     print("Listo. Ejecute: streamlit run app/streamlit_app.py")
 

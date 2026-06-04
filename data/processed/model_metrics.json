@@ -1,0 +1,92 @@
+{
+  "accuracy": 0.3335155754136581,
+  "classification_report": {
+    "Amistad/Entorno": {
+      "precision": 0.3483851371874051,
+      "recall": 0.4085727855616243,
+      "f1-score": 0.37608612492485927,
+      "support": 16844.0
+    },
+    "Conocido sin trato": {
+      "precision": 0.5520294282685952,
+      "recall": 0.14864433811802233,
+      "f1-score": 0.23422041161843288,
+      "support": 59565.0
+    },
+    "Desconocido/Delincuencia": {
+      "precision": 0.3214258741786874,
+      "recall": 0.24259697323795137,
+      "f1-score": 0.27650278549269924,
+      "support": 35087.0
+    },
+    "Fuerza Pública": {
+      "precision": 0.2979437585089902,
+      "recall": 0.6102990672180018,
+      "f1-score": 0.400410094637224,
+      "support": 20798.0
+    },
+    "Vecino": {
+      "precision": 0.2973346604733466,
+      "recall": 0.6011179429849077,
+      "f1-score": 0.3978689555662437,
+      "support": 26835.0
+    },
+    "accuracy": 0.3335155754136581,
+    "macro avg": {
+      "precision": 0.3634237717234049,
+      "recall": 0.4022462214241015,
+      "f1-score": 0.3370176744478918,
+      "support": 159129.0
+    },
+    "weighted avg": {
+      "precision": 0.4034670719742056,
+      "recall": 0.3335155754136581,
+      "f1-score": 0.30787806943896934,
+      "support": 159129.0
+    }
+  },
+  "confusion_matrix": [
+    [
+      6882,
+      1628,
+      1775,
+      2760,
+      3799
+    ],
+    [
+      6601,
+      8854,
+      10068,
+      11753,
+      22289
+    ],
+    [
+      3343,
+      3211,
+      8512,
+      11288,
+      8733
+    ],
+    [
+      1363,
+      724,
+      2718,
+      12693,
+      3300
+    ],
+    [
+      1565,
+      1622,
+      3409,
+      4108,
+      16131
+    ]
+  ],
+  "classes": [
+    "Amistad/Entorno",
+    "Conocido sin trato",
+    "Desconocido/Delincuencia",
+    "Fuerza Pública",
+    "Vecino"
+  ]
+}

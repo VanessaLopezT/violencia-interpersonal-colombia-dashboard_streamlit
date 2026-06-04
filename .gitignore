@@ -4,6 +4,11 @@ data/raw/*.csv
 *.pyd
 
 
-data/processed/
+!data/processed/
+data/processed/*
+!data/processed/random_forest.pkl
+!data/processed/model_features.json
+!data/processed/model_metrics.json
+!data/processed/agg_*.parquet
 *.csv
 *.xlsx

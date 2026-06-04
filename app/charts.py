@@ -254,11 +254,20 @@ def barras_horizontales(
     labels = df[y_col].astype(str)
     if pct_col and pct_col in df.columns:
         labels = labels + " (" + df[pct_col].round(1).astype(str) + "%)"
-    hover = (
-        "<b>%{y}</b><br>Casos: %{x:,}<br>"
-        + ("Participación: %{customdata:.1f}%<br>" if pct_col else "")
-        + "<extra></extra>"
-    )
+    
+    if x_col == "tasa":
+        hover = "<b>%{y}</b><br>Tasa: %{x:,.1f} por 100k hab.<br><extra></extra>"
+        text_vals = df[x_col].map(lambda v: f"{v:,.1f}")
+        x_title = "Tasa por 100.000 habitantes"
+    else:
+        hover = (
+            "<b>%{y}</b><br>Casos: %{x:,}<br>"
+            + ("Participación: %{customdata:.1f}%<br>" if pct_col else "")
+            + "<extra></extra>"
+        )
+        text_vals = df[x_col].map(lambda v: f"{int(v):,}")
+        x_title = "Casos registrados"
+
     custom = df[pct_col] if pct_col and pct_col in df.columns else None
     fig = go.Figure()
     fig.add_trace(
@@ -267,13 +276,13 @@ def barras_horizontales(
             y=labels,
             orientation="h",
             marker_color=COLOR_PRIMARY,
-            text=df[x_col].map(lambda v: f"{int(v):,}"),
+            text=text_vals,
             textposition="outside",
             customdata=custom,
             hovertemplate=hover,
         )
     )
-    fig.update_layout(title=title, xaxis_title="Casos registrados", yaxis_title="")
+    fig.update_layout(title=title, xaxis_title=x_title, yaxis_title="")
     fig_height = height if height is not None else max(400, len(df) * 36)
     xmax = float(df[x_col].max()) if len(df) else 1.0
     _fit_outside_text(fig, xmax, axis="x")
@@ -589,10 +598,48 @@ def barras_top_franjas(
     return barras_horizontales(plot, "combinacion", title=title)
 
 
-def _norm_depto_geo_key(name: str) -> str:
+def norm_depto_geo_key(name: str) -> str:
     text = unicodedata.normalize("NFKD", str(name).strip())
     text = "".join(c for c in text if not unicodedata.combining(c))
     return re.sub(r"[^a-z0-9]+", " ", text.lower()).strip()
+
+
+POBLACION_DEPARTAMENTOS = {
+    "amazonas": 79020,
+    "antioquia": 6677930,
+    "arauca": 294206,
+    "archipielago de san andres providencia y santa catalina": 63786,
+    "atlantico": 2722128,
+    "bogota d c": 7743955,
+    "santafe de bogota d c": 7743955,
+    "bolivar": 2180976,
+    "boyaca": 1242731,
+    "caldas": 1018453,
+    "caqueta": 410521,
+    "casanare": 435195,
+    "cauca": 1491937,
+    "cesar": 1295387,
+    "choco": 544916,
+    "cundinamarca": 3242999,
+    "cordoba": 1828947,
+    "guainia": 50636,
+    "guaviare": 86720,
+    "huila": 1122622,
+    "la guajira": 965718,
+    "magdalena": 1426926,
+    "meta": 1063200,
+    "narino": 1627589,
+    "norte de santander": 1620318,
+    "putumayo": 359127,
+    "quindio": 555401,
+    "risaralda": 961055,
+    "santander": 2280908,
+    "sucre": 943874,
+    "tolima": 1339998,
+    "valle del cauca": 4532152,
+    "vaupes": 44712,
+    "vichada": 112958
+}
 
 
 def _geo_depto_lookup(geojson: dict) -> dict[str, str]:
@@ -600,7 +647,7 @@ def _geo_depto_lookup(geojson: dict) -> dict[str, str]:
     for feature in geojson.get("features", []):
         nombre = feature.get("properties", {}).get("NOMBRE_DPT")
         if nombre:
-            lookup[_norm_depto_geo_key(nombre)] = nombre
+            lookup[norm_depto_geo_key(nombre)] = nombre
     return lookup
 
 
@@ -608,8 +655,8 @@ def _map_departamento_geo(
     departamento: str, lookup: dict[str, str]
 ) -> str | None:
     if departamento == DEPTO_BOGOTA:
-        return lookup.get(_norm_depto_geo_key("SANTAFE DE BOGOTA D.C"))
-    return lookup.get(_norm_depto_geo_key(departamento))
+        return lookup.get(norm_depto_geo_key("SANTAFE DE BOGOTA D.C"))
+    return lookup.get(norm_depto_geo_key(departamento))
 
 
 def _geo_departamentos(geojson: dict) -> list[str]:
@@ -633,6 +680,7 @@ def _completar_mapa_departamentos(
     geojson: dict,
     year_min: int,
     year_max: int,
+    metric: str = "casos",
 ) -> pd.DataFrame:
     """Todos los departamentos del GeoJSON en cada año (casos=0 si no hay filtro)."""
     deptos = _geo_departamentos(geojson)
@@ -646,9 +694,20 @@ def _completar_mapa_departamentos(
         agg = plot.groupby(["geo_depto", "anio_hecho"], as_index=False)["casos"].sum()
     complete = grid.merge(agg, on=["geo_depto", "anio_hecho"], how="left")
     complete["casos"] = complete["casos"].fillna(0).astype(int)
-    complete["intensidad"] = complete.groupby("anio_hecho")["casos"].transform(
-        _intensidad_anual
-    )
+    
+    if metric == "tasa":
+        complete["norm_key"] = complete["geo_depto"].map(norm_depto_geo_key)
+        complete["poblacion"] = complete["norm_key"].map(POBLACION_DEPARTAMENTOS)
+        complete["tasa"] = (complete["casos"] / complete["poblacion"]) * 100000
+        complete["tasa"] = complete["tasa"].fillna(0.0)
+        complete["intensidad"] = complete.groupby("anio_hecho")["tasa"].transform(
+            _intensidad_anual
+        )
+    else:
+        complete["intensidad"] = complete.groupby("anio_hecho")["casos"].transform(
+            _intensidad_anual
+        )
+        
     complete["anio_hecho"] = complete["anio_hecho"].astype(int)
     return complete
 
@@ -658,6 +717,7 @@ def mapa_colombia_timeline(
     geojson: dict,
     year_min: int,
     year_max: int,
+    metric: str = "casos",
 ) -> go.Figure:
     """Mapa coroplético por departamento con animación anual."""
     lookup = _geo_depto_lookup(geojson)
@@ -666,7 +726,7 @@ def mapa_colombia_timeline(
         return _layout(go.Figure(), height=480)
 
     if df.empty:
-        plot = _completar_mapa_departamentos(df, geojson, year_min, year_max)
+        plot = _completar_mapa_departamentos(df, geojson, year_min, year_max, metric=metric)
     else:
         plot = df.copy()
         plot["anio_hecho"] = pd.to_numeric(plot["anio_hecho"], errors="coerce")
@@ -678,11 +738,12 @@ def mapa_colombia_timeline(
             lambda d: _map_departamento_geo(str(d), lookup)
         )
         plot = plot.dropna(subset=["geo_depto"])
-        plot = _completar_mapa_departamentos(plot, geojson, year_min, year_max)
+        plot = _completar_mapa_departamentos(plot, geojson, year_min, year_max, metric=metric)
 
     if plot.empty:
         return _layout(go.Figure(), height=480)
 
+    color_col = "tasa" if metric == "tasa" else "casos"
     fig = px.choropleth(
         plot,
         geojson=geojson,
@@ -693,9 +754,9 @@ def mapa_colombia_timeline(
         animation_group="geo_depto",
         range_color=(0, 1),
         color_continuous_scale=MAP_CHOROPLETH_SCALE,
-        custom_data=["casos"],
-        labels={"intensidad": "Percentil en el año", "casos": "Casos"},
-        title="Casos registrados por departamento",
+        custom_data=[color_col],
+        labels={"intensidad": "Percentil en el año", color_col: "Tasa por 100k hab." if metric == "tasa" else "Casos"},
+        title="Tasa de casos por 100.000 habitantes por departamento" if metric == "tasa" else "Casos registrados por departamento",
     )
     fig.update_geos(
         fitbounds="geojson",
@@ -706,20 +767,30 @@ def mapa_colombia_timeline(
         lonaxis_range=[-79.5, -66.5],
         domain=dict(x=[0.0, 1.0], y=[0.22, 1.0]),
     )
-    hover_tpl = (
-        "<b>%{{location}}</b><br>Año: {year}<br>"
-        "Casos: %{{customdata[0]:,}}<extra></extra>"
-    )
+    if metric == "tasa":
+        hover_tpl = (
+            "<b>%{{location}}</b><br>Año: {year}<br>"
+            "Tasa: %{{customdata[0]:,.1f}} por 100k hab.<extra></extra>"
+        )
+    else:
+        hover_tpl = (
+            "<b>%{{location}}</b><br>Año: {year}<br>"
+            "Casos: %{{customdata[0]:,}}<extra></extra>"
+        )
+        
     if fig.frames:
         for frame in fig.frames:
             frame.data[0].hovertemplate = hover_tpl.format(year=frame.name)
         fig.update(data=fig.frames[0].data)
     else:
-        fig.update_traces(
-            hovertemplate=(
-                "<b>%{location}</b><br>Casos: %{z:,}<extra></extra>"
+        if metric == "tasa":
+            fig.update_traces(
+                hovertemplate="<b>%{location}</b><br>Tasa: %{z:,.1f} por 100k hab.<extra></extra>"
             )
-        )
+        else:
+            fig.update_traces(
+                hovertemplate="<b>%{location}</b><br>Casos: %{z:,}<extra></extra>"
+            )
     fig.update_coloraxes(
         colorbar=dict(
             orientation="h",

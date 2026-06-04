@@ -18,6 +18,7 @@ from app.page_utils import (
     show_cached_chart,
 )
 from app.text_es import DEPTO_BOGOTA, chart_ayuda
+from app.charts import norm_depto_geo_key, POBLACION_DEPARTAMENTOS
 
 
 def _drill_cache_key(cache_key: tuple, dept_sel: str) -> tuple:
@@ -81,6 +82,14 @@ data = setup_page("territorio")
 ck = data["cache_key"]
 render_kpis_etapa("territorio", data)
 
+metric_choice = st.radio(
+    "Métrica de análisis",
+    ["Casos absolutos", "Tasa por 100.000 habitantes"],
+    horizontal=True,
+    help="La tasa por 100.000 habitantes normaliza los casos según la población estimada de cada departamento (DANE 2020), lo que permite una comparación justa entre regiones de diferente tamaño.",
+    key="territorio_metric_choice"
+)
+
 vista = lazy_tab(
     [
         "Ranking departamental",
@@ -92,9 +101,21 @@ vista = lazy_tab(
 )
 
 if vista == "Ranking departamental":
-    fig_json = cached_figure("dept_top10", ck, _df_payload(data["dept"].head(10)))
+    if metric_choice == "Tasa por 100.000 habitantes":
+        df_dept = data["dept"].copy()
+        df_dept = df_dept[df_dept["departamento_hecho"] != "Sin informacion"]
+        df_dept["norm_key"] = df_dept["departamento_hecho"].map(norm_depto_geo_key)
+        df_dept["poblacion"] = df_dept["norm_key"].map(POBLACION_DEPARTAMENTOS)
+        df_dept["tasa"] = (df_dept["casos"] / df_dept["poblacion"]) * 100000
+        df_dept = df_dept.dropna(subset=["poblacion"]).sort_values("tasa", ascending=False)
+        fig_json = cached_figure("dept_tasa_top10", ck, _df_payload(df_dept.head(10)))
+        chart_id_ayuda = "dept_tasa_top10"
+    else:
+        fig_json = cached_figure("dept_top10", ck, _df_payload(data["dept"].head(10)))
+        chart_id_ayuda = "dept_top10"
+
     show_cached_chart(
-        fig_json, "chart_territorio_dept", ayuda=chart_ayuda("dept_top10")
+        fig_json, "chart_territorio_dept", ayuda=chart_ayuda(chart_id_ayuda)
     )
 
 if vista == "Mapa de calor temporal":
@@ -106,8 +127,9 @@ if vista == "Mapa de calor temporal":
 
     geojson = load_colombia_geojson()
     f = data["filter_state"]
+    metric = "tasa" if metric_choice == "Tasa por 100.000 habitantes" else "casos"
 
-    fig = mapa_colombia_timeline(data["mapa_drill"], geojson, f.year_min, f.year_max)
+    fig = mapa_colombia_timeline(data["mapa_drill"], geojson, f.year_min, f.year_max, metric=metric)
     st.plotly_chart(
         fig,
         use_container_width=True,
